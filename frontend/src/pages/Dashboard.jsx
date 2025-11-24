@@ -212,13 +212,13 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Botones Circulares - NUEVO DISEÑO */}
+        {/* Cards Rectangulares - NUEVO DISEÑO */}
+                {/* Cards Rectangulares - Mismos colores */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-          gap: '2rem',
-          marginTop: '2rem',
-          justifyItems: 'center'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '1.5rem',
+          marginTop: '2rem'
         }}>
           {buttons.map((button) => {
             const IconComponent = button.icon;
@@ -227,24 +227,19 @@ const Dashboard = () => {
                 key={button.id}
                 onClick={() => button.path && navigate(button.path)}
                 style={{
-                  width: '160px',
-                  height: '160px',
-                  borderRadius: '50%',
+                  width: '100%',
+                  borderRadius: '20px',
                   border: 'none',
                   background: `linear-gradient(135deg, ${button.color}, ${colors.accent})`,
                   color: 'white',
                   cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.75rem',
+                  padding: '2rem 1.5rem',
                   transition: 'all 0.3s ease',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                  padding: '1rem'
+                  textAlign: 'center'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.transform = 'scale(1.1)';
+                  e.target.style.transform = 'scale(1.05)';
                   e.target.style.boxShadow = '0 8px 30px rgba(0,0,0,0.2)';
                 }}
                 onMouseLeave={(e) => {
@@ -252,18 +247,164 @@ const Dashboard = () => {
                   e.target.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
                 }}
               >
-                <IconComponent size={50} />
-                <span style={{
+                <IconComponent size={40} />
+                <div style={{
                   fontWeight: '600',
-                  fontSize: '0.9rem',
-                  textAlign: 'center',
-                  lineHeight: '1.2'
+                  fontSize: '1.1rem',
+                  marginTop: '1rem'
                 }}>
                   {button.label}
-                </span>
+                </div>
               </button>
             );
           })}
+        </div>
+
+                {/* Sección de Estadísticas - DESPUÉS de las cards principales */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+          gap: '1.5rem',
+          marginTop: '3rem'
+        }}>
+          
+          {/* Card de Ingresos Esperados - MEJOR ESPACIADO */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '2rem',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            border: `1px solid ${colors.secondary}`,
+            gridColumn: 'span 2'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '1.5rem'
+            }}>
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: colors.accent
+              }}>
+                📊 Ingresos Esperados
+              </h3>
+              <select style={{
+                padding: '0.75rem 1rem',
+                borderRadius: '12px',
+                border: `2px solid ${colors.secondary}`,
+                backgroundColor: 'white',
+                color: colors.accent,
+                fontSize: '1rem',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}>
+                <option>Esta semana</option>
+                <option>Este mes</option>
+                <option>Próximos 7 días</option>
+              </select>
+            </div>
+            
+            {/* Gráfica con mejor espaciado */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'end',
+              justifyContent: 'space-between',
+              height: '160px',
+              padding: '4.5rem 0',
+              gap: '3.5rem',
+              marginBottom: '0.2rem'
+            }}>
+              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day, index) => (
+                <div key={day} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  flex: 1,
+                  gap: '0.35rem'
+                }}>
+                  <div style={{
+                    width: '100%',
+                    height: `${50 + (index * 20)}px`,
+                    backgroundColor: colors.accent,
+                    borderRadius: '8px 8px 0 0',
+                    opacity: 0.8,
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.opacity = '1';
+                    e.target.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.opacity = '0.8';
+                    e.target.style.transform = 'scale(1)';
+                  }}
+                  ></div>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    <span style={{
+                      fontSize: '0.9rem',
+                      color: colors.lightText,
+                      fontWeight: '500'
+                    }}>
+                      {day}
+                    </span>
+                    <span style={{
+                      fontSize: '0.8rem',
+                      color: colors.accent,
+                      fontWeight: '700'
+                    }}>
+                      ${(index + 1) * 250}K
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Total y porcentaje */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingTop: '2rem',
+              borderTop: `2px solid ${colors.secondary}`
+            }}>
+              <div>
+                <div style={{ 
+                  fontSize: '1rem', 
+                  color: colors.lightText,
+                  marginBottom: '0.5rem'
+                }}>
+                  Total Esperado Esta Semana
+                </div>
+                <div style={{ 
+                  fontSize: '2rem', 
+                  fontWeight: '800', 
+                  color: colors.accent 
+                }}>
+                  $1,750,000
+                </div>
+              </div>
+              <div style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#3bb7e7ff',
+                color: 'white',
+                borderRadius: '12px',
+                fontSize: '1rem',
+                fontWeight: '700',
+                boxShadow: '0 2px 10px rgba(16, 131, 185, 0.3)'
+              }}>
+                ↗ +12% vs semana anterior
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
