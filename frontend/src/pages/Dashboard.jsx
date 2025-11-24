@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
   Heart, 
@@ -13,22 +14,26 @@ import {
   FileText
 } from 'lucide-react';
 
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuAnimation, setMenuAnimation] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
-    setMenuAnimation(!menuAnimation);
-    setTimeout(() => setSidebarOpen(!sidebarOpen), 150);
+    const newState = !sidebarOpen;
+    setSidebarOpen(newState);
+    setMenuAnimation(newState); // Mismo estado para ambos
   };
 
   // Paleta de colores profesional
   const colors = {
     primary: '#F6F3ED',
     secondary: '#C2CBD3', 
-    accent: '#313851',
-    text: '#2D3748',
+    accent: '#11273bff',
+    text: '#202c33ff',
     lightText: '#718096'
   };
 
@@ -91,17 +96,19 @@ const Dashboard = () => {
         {/* Botón Menú Hamburguesa Animado */}
         <button
           onClick={toggleMenu}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           style={{
-            background: 'none',
+            background: isHovered ? 'rgba(255, 255, 255, 0.1)' : 'none',
             border: 'none',
             cursor: 'pointer',
             padding: '8px',
             borderRadius: '8px',
-            transition: 'background-color 0.2s'
+            transition: 'all 0.3s ease',
+            boxShadow: isHovered ? '0 0 10px rgba(255, 255, 255, 0.3)' : 'none'
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-          onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
         >
+          {/* El contenido de las 3 líneas se mantiene igual */}
           <div style={{
             width: '24px',
             height: '24px',
@@ -110,34 +117,38 @@ const Dashboard = () => {
             {/* Línea superior */}
             <div style={{
               position: 'absolute',
-              top: menuAnimation ? '11px' : '4px',
+              top: '4px',
               left: '0',
               width: '24px',
               height: '2px',
               backgroundColor: 'white',
               transform: menuAnimation ? 'rotate(45deg)' : 'none',
+              transformOrigin: 'center',
               transition: 'all 0.3s ease'
             }}></div>
+            
             {/* Línea media */}
             <div style={{
               position: 'absolute',
               top: '11px',
               left: '0',
-              width: menuAnimation ? '0' : '24px',
+              width: '24px',
               height: '2px',
               backgroundColor: 'white',
               opacity: menuAnimation ? 0 : 1,
               transition: 'all 0.3s ease'
             }}></div>
+            
             {/* Línea inferior */}
             <div style={{
               position: 'absolute',
-              top: menuAnimation ? '11px' : '18px',
+              top: '18px',
               left: '0',
               width: '24px',
               height: '2px',
               backgroundColor: 'white',
               transform: menuAnimation ? 'rotate(-45deg)' : 'none',
+              transformOrigin: 'center',
               transition: 'all 0.3s ease'
             }}></div>
           </div>
@@ -199,91 +210,54 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
-
-          {/* Información del usuario */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '1rem',
-            marginTop: '1.5rem'
-          }}>
-            <div>
-              <strong style={{ color: colors.lightText, fontSize: '0.875rem' }}>Email:</strong>
-              <div style={{ color: colors.text, marginTop: '0.25rem' }}>{user?.email}</div>
-            </div>
-            <div>
-              <strong style={{ color: colors.lightText, fontSize: '0.875rem' }}>Tipo de usuario:</strong>
-              <div style={{ 
-                color: colors.accent, 
-                marginTop: '0.25rem',
-                fontWeight: '600'
-              }}>
-                {user?.user_type === 'professional' ? 'Profesional de la Salud' : 'Paciente'}
-              </div>
-            </div>
-            {user?.specialty && (
-              <div>
-                <strong style={{ color: colors.lightText, fontSize: '0.875rem' }}>Especialidad:</strong>
-                <div style={{ color: colors.text, marginTop: '0.25rem' }}>{user?.specialty}</div>
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Botones Circulares */}
+        {/* Botones Circulares - NUEVO DISEÑO */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
           gap: '2rem',
-          marginTop: '2rem'
+          marginTop: '2rem',
+          justifyItems: 'center'
         }}>
           {buttons.map((button) => {
             const IconComponent = button.icon;
             return (
               <button
                 key={button.id}
+                onClick={() => button.path && navigate(button.path)}
                 style={{
+                  width: '160px',
+                  height: '160px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  background: `linear-gradient(135deg, ${button.color}, ${colors.accent})`,
+                  color: 'white',
+                  cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1rem',
-                  padding: '2rem 1rem',
-                  backgroundColor: 'white',
-                  border: `2px solid ${colors.secondary}`,
-                  borderRadius: '24px',
-                  cursor: 'pointer',
+                  justifyContent: 'center',
+                  gap: '0.75rem',
                   transition: 'all 0.3s ease',
-                  textDecoration: 'none',
-                  color: 'inherit'
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                  padding: '1rem'
                 }}
-                onMouseOver={(e) => {
-                  e.target.style.transform = 'translateY(-4px)';
-                  e.target.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-                  e.target.style.borderColor = button.color;
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'scale(1.1)';
+                  e.target.style.boxShadow = '0 8px 30px rgba(0,0,0,0.2)';
                 }}
-                onMouseOut={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = 'none';
-                  e.target.style.borderColor = colors.secondary;
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
                 }}
               >
-                <div style={{
-                  width: '80px',
-                  height: '80px',
-                  backgroundColor: button.color,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white'
-                }}>
-                  <IconComponent size={32} />
-                </div>
+                <IconComponent size={50} />
                 <span style={{
                   fontWeight: '600',
-                  color: colors.accent,
-                  fontSize: '1rem',
-                  textAlign: 'center'
+                  fontSize: '0.9rem',
+                  textAlign: 'center',
+                  lineHeight: '1.2'
                 }}>
                   {button.label}
                 </span>
