@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { appointmentService, userService } from '../services/api';
 
-const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
+const CreateAppointment = ({ onAppointmentCreated, onCancel, professionalId }) => {
   const [formData, setFormData] = useState({
     professional: '',
     service: '',
@@ -22,6 +22,15 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
     loadInitialData();
   }, []);
 
+  // Pre-seleccionar profesional si viene por parámetro
+  useEffect(() => {
+    if (professionalId) {
+      setFormData(prev => ({
+        ...prev,
+        professional: professionalId
+      }));
+    }
+}, [professionalId]);
   // Cargar horarios disponibles cuando cambie profesional o fecha
   useEffect(() => {
     if (formData.professional && formData.appointment_date) {
@@ -98,7 +107,7 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
 
     // Validaciones básicas
     const newErrors = {};
-    if (!formData.professional) newErrors.professional = 'Selecciona un profesional';
+    if (!professionalId && !formData.professional) newErrors.professional = 'Selecciona un profesional';
     if (!formData.service) newErrors.service = 'Selecciona un servicio';
     if (!formData.appointment_date) newErrors.appointment_date = 'Selecciona una fecha';
     if (!formData.appointment_time) newErrors.appointment_time = 'Selecciona un horario';
@@ -244,49 +253,65 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Profesional */}
-          <div>
-            <label htmlFor="professional" style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              color: '#374151',
-              marginBottom: '0.5rem'
-            }}>
-              👨‍⚕️ Profesional *
-            </label>
-            <select
-              id="professional"
-              name="professional"
-              value={formData.professional}
-              onChange={handleChange}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: `1px solid ${errors.professional ? '#fca5a5' : '#d1d5db'}`,
-                borderRadius: '0.5rem',
+          {/* Profesional - SOLO MOSTRAR SI NO VIENE PRE-SELECCIONADO */}
+          {!professionalId && (
+            <div>
+              <label htmlFor="professional" style={{
+                display: 'block',
                 fontSize: '0.875rem',
-                backgroundColor: 'white',
-                boxSizing: 'border-box'
-              }}
-            >
-              <option value="">Selecciona un profesional</option>
-              {professionals.map(professional => (
-                <option key={professional.id} value={professional.id}>
-                  Dr. {professional.first_name} {professional.last_name} - {professional.specialty}
-                </option>
-              ))}
-            </select>
-            {errors.professional && (
-              <p style={{
-                color: '#dc2626',
-                fontSize: '0.75rem',
-                margin: '0.25rem 0 0 0'
+                fontWeight: '500',
+                color: '#374151',
+                marginBottom: '0.5rem'
               }}>
-                {errors.professional}
+                👨‍⚕️ Profesional *
+              </label>
+              <select
+                id="professional"
+                name="professional"
+                value={formData.professional}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: `1px solid ${errors.professional ? '#fca5a5' : '#d1d5db'}`,
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  backgroundColor: 'white',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <option value="">Selecciona un profesional</option>
+                {professionals.map(professional => (
+                  <option key={professional.id} value={professional.id}>
+                    Dr. {professional.first_name} {professional.last_name} - {professional.specialty}
+                  </option>
+                ))}
+              </select>
+              {errors.professional && (
+                <p style={{
+                  color: '#dc2626',
+                  fontSize: '0.75rem',
+                  margin: '0.25rem 0 0 0'
+                }}>
+                  {errors.professional}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Mostrar info del profesional si viene pre-seleccionado */}
+          {professionalId && (
+            <div style={{
+              backgroundColor: '#f3f4f6',
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              border: '1px solid #d1d5db'
+            }}>
+              <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500' }}>
+                👨‍⚕️ Profesional seleccionado: {professionals.find(p => p.id === professionalId)?.first_name} {professionals.find(p => p.id === professionalId)?.last_name}
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Servicio */}
           <div>

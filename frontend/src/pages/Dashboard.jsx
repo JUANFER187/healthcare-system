@@ -213,12 +213,12 @@ const Dashboard = () => {
         </div>
 
         {/* Cards Rectangulares - NUEVO DISEÑO */}
-                {/* Cards Rectangulares - Mismos colores */}
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '1.5rem',
-          marginTop: '2rem'
+          gap: '2.5rem',
+          marginTop: '3.1rem'
         }}>
           {buttons.map((button) => {
             const IconComponent = button.icon;
@@ -233,9 +233,9 @@ const Dashboard = () => {
                   background: `linear-gradient(135deg, ${button.color}, ${colors.accent})`,
                   color: 'white',
                   cursor: 'pointer',
-                  padding: '2rem 1.5rem',
+                  padding: '3rem 1.5rem',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
                   textAlign: 'center'
                 }}
                 onMouseEnter={(e) => {
@@ -260,7 +260,7 @@ const Dashboard = () => {
           })}
         </div>
 
-                {/* Sección de Estadísticas - DESPUÉS de las cards principales */}
+        {/* Sección de Estadísticas - DESPUÉS de las cards principales */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
@@ -281,7 +281,7 @@ const Dashboard = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '1.5rem'
+              marginBottom: '5.5rem'
             }}>
               <h3 style={{
                 margin: 0,
@@ -292,7 +292,7 @@ const Dashboard = () => {
                 📊 Ingresos Esperados
               </h3>
               <select style={{
-                padding: '0.75rem 1rem',
+                padding: '.75rem 1rem',
                 borderRadius: '12px',
                 border: `2px solid ${colors.secondary}`,
                 backgroundColor: 'white',
@@ -313,9 +313,9 @@ const Dashboard = () => {
               alignItems: 'end',
               justifyContent: 'space-between',
               height: '160px',
-              padding: '4.5rem 0',
+              padding: '1.5rem 0',
               gap: '3.5rem',
-              marginBottom: '0.2rem'
+              marginBottom: '0.05rem'
             }}>
               {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day, index) => (
                 <div key={day} style={{
@@ -399,7 +399,7 @@ const Dashboard = () => {
                 borderRadius: '12px',
                 fontSize: '1rem',
                 fontWeight: '700',
-                boxShadow: '0 2px 10px rgba(16, 131, 185, 0.3)'
+                boxShadow: '0 2px 10px rgba(16, 179, 185, 0.3)'
               }}>
                 ↗ +12% vs semana anterior
               </div>

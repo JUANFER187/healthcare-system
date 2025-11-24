@@ -389,6 +389,7 @@ const ProfessionalProfile = () => {
               <CreateAppointment
                 onAppointmentCreated={handleAppointmentCreated}
                 onCancel={() => setShowAppointmentForm(false)}
+                professionalId={professional.id}  // ← AGREGAR ESTA LÍNEA
               />
             </div>
           </div>
