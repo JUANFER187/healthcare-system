@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://backend:8000/api';
 
 // Crear instancia de axios
 const api = axios.create({
@@ -59,15 +59,25 @@ api.interceptors.response.use(
   }
 );
 
-// Servicios de autenticación
+// Servicios de autenticación - CORREGIR
 export const authService = {
   login: async (email, password) => {
-    const response = await api.post('/auth/login/', { email, password });
+    const response = await api.post('/users/login/', { email, password });  // ← CORREGIR ruta
+    if (response.data.access) {
+      localStorage.setItem('access_token', response.data.access);
+      localStorage.setItem('refresh_token', response.data.refresh);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
     return response.data;
   },
 
   register: async (userData) => {
     const response = await api.post('/users/register/', userData);
+    if (response.data.access) {
+      localStorage.setItem('access_token', response.data.access);
+      localStorage.setItem('refresh_token', response.data.refresh);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
     return response.data;
   },
 
@@ -78,7 +88,7 @@ export const authService = {
   }
 };
 
-// Servicios de usuarios
+// Servicios de usuarios - CORREGIR getProfessionals
 export const userService = {
   getProfile: async () => {
     const response = await api.get('/users/profile/');
@@ -86,12 +96,28 @@ export const userService = {
   },
 
   getProfessionals: async () => {
-    const response = await api.get('/users/professionals/');
-    return response.data;
+    try {
+      const response = await api.get('/users/professionals/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching professionals:', error);
+      // Fallback temporal mientras se crea el endpoint
+      return [
+        {
+          id: 1,
+          first_name: 'Juan',
+          last_name: 'Pérez',
+          specialty: 'Cardiología',
+          license_number: 'LM-12345',
+          email: 'juan.perez@example.com',
+          phone_number: '+1234567890'
+        }
+      ];
+    }
   }
 };
 
-// Servicios de citas
+// Servicios de citas - CORREGIR getServices temporalmente
 export const appointmentService = {
   getAppointments: async () => {
     const response = await api.get('/appointments/');
@@ -104,8 +130,16 @@ export const appointmentService = {
   },
 
   getServices: async () => {
-    const response = await api.get('/appointments/services/');
-    return response.data;
+    try {
+      // Temporal - hasta crear endpoint real
+      return [
+        { id: 1, name: 'Consulta General', duration: 30, price: 500 },
+        { id: 2, name: 'Consulta Especializada', duration: 60, price: 1000 },
+      ];
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      return [];
+    }
   }
 };
 

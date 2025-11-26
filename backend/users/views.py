@@ -54,3 +54,24 @@ class ProfessionalListView(generics.ListAPIView):
     
     def get_queryset(self):
         return User.objects.filter(user_type='professional', is_active=True)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def professionals_list_view(request):
+    """Lista todos los profesionales - compatible con frontend actual"""
+    try:
+        professionals = User.objects.filter(user_type='professional', is_active=True)
+        data = []
+        for prof in professionals:
+            data.append({
+                'id': prof.id,
+                'first_name': prof.first_name,
+                'last_name': prof.last_name,
+                'email': prof.email,
+                'specialty': prof.specialty,
+                'license_number': prof.license_number,
+                'phone_number': prof.phone_number,
+            })
+        return Response(data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
