@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://backend:8000/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 // Crear instancia de axios
 const api = axios.create({
@@ -62,7 +62,7 @@ api.interceptors.response.use(
 // Servicios de autenticación - CORREGIR
 export const authService = {
   login: async (email, password) => {
-    const response = await api.post('/users/login/', { email, password });  // ← CORREGIR ruta
+    const response = await api.post('/auth/login/', { email, password });  // ← CORREGIR ruta
     if (response.data.access) {
       localStorage.setItem('access_token', response.data.access);
       localStorage.setItem('refresh_token', response.data.refresh);
