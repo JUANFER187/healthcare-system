@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import MyAppointments from './pages/MyAppointments';
+import Clinics from './pages/Clinics';
+import MedicalHistory from './pages/MedicalHistory';
 import './App.css'
 
 // Componente para proteger rutas
@@ -104,6 +107,74 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/mis-citas" 
+              element={
+                <ProtectedRoute>
+                  <MyAppointments />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/consultorios" 
+              element={
+              <ProtectedRoute>  
+                <Clinics />
+              </ProtectedRoute>
+              } 
+            />  
+            <Route 
+              path="/mi-historial" 
+              element={
+                <ProtectedRoute> 
+                  <MedicalHistory />
+                </ProtectedRoute>
+                } 
+              />
+            <Route 
+              path="/dashboard" 
+              element={
+                <Dashboard />
+                } 
+              />
+            <Route
+              path="/mis-citas" 
+              element={
+                <MyAppointments />
+                } 
+              />
+            <Route 
+              path="/consultorios" 
+              element={
+                <Clinics />
+                } 
+              />
+            <Route 
+              path="/mi-historial" 
+              element={
+                <MedicalHistory />
+              } 
+            />
+            
+              {/* Rutas para profesionales (placeholders por ahora) */}
+              <Route path="/agenda" element={
+                <div style={{padding: '2rem', textAlign: 'center'}}>
+                  <h1>📅 Agenda del Profesional</h1>
+                  <p>Página en desarrollo - Próximamente</p>
+                </div>
+              } />
+              <Route path="/pacientes" element={
+                <div style={{padding: '2rem', textAlign: 'center'}}>
+                  <h1>👥 Gestión de Pacientes</h1>
+                  <p>Página en desarrollo - Próximamente</p>
+                </div>
+              } />
+              <Route path="/expedientes" element={
+                <div style={{padding: '2rem', textAlign: 'center'}}>
+                  <h1>📋 Expedientes Médicos</h1>
+                  <p>Página en desarrollo - Próximamente</p>
+                </div>
+              } />
           </Routes>
         </div>
       </Router>

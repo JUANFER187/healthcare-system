@@ -37,19 +37,19 @@ const Dashboard = () => {
     lightText: '#718096'
   };
 
-  // Botones para Pacientes
-  const patientButtons = [
-    { id: 'appointments', label: 'Mis Citas', icon: Calendar, color: '#4A5568' },
-    { id: 'clinics', label: 'Consultorios', icon: Heart, color: '#2D3748' },
-    { id: 'history', label: 'Mi Historial', icon: History, color: '#1A202C' }
-  ];
-
-  // Botones para Profesionales
-  const professionalButtons = [
-    { id: 'schedule', label: 'Agenda', icon: Calendar, color: '#4A5568' },
-    { id: 'patients', label: 'Pacientes', icon: Users, color: '#2D3748' },
-    { id: 'records', label: 'Expedientes', icon: FileText, color: '#1A202C' }
-  ];
+//Definición de botones según el tipo de usuario
+  const buttons = user?.user_type === 'professional' 
+    ? [
+        { id: 1, path: '/agenda', icon: Calendar, label: 'Agenda', color: '#313851' },
+        { id: 2, path: '/pacientes', icon: Users, label: 'Pacientes', color: '#C2CBD3' },
+        { id: 3, path: '/expedientes', icon: FileText, label: 'Expedientes', color: '#313851' }
+      ]
+    : [
+        { id: 1, path: '/mis-citas', icon: Calendar, label: 'Mis Citas', color: '#313851' },
+        { id: 2, path: '/consultorios', icon: Users, label: 'Consultorios', color: '#C2CBD3' },
+        { id: 3, path: '/mi-historial', icon: FileText, label: 'Mi Historial', color: '#313851' }
+      ];
+    ];
 
   const buttons = user?.user_type === 'professional' ? professionalButtons : patientButtons;
 
@@ -306,6 +306,7 @@ const Dashboard = () => {
                 <option>Próximos 7 días</option>
               </select>
             </div>
+            
             
             {/* Gráfica con mejor espaciado */}
             <div style={{
