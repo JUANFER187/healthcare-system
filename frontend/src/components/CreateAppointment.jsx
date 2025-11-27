@@ -92,61 +92,72 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    setSuccess('');
+  e.preventDefault();
+  setErrors({});
+  setSuccess('');
 
-    // Validaciones básicas
-    const newErrors = {};
-    if (!formData.professional) newErrors.professional = 'Selecciona un profesional';
-    if (!formData.service) newErrors.service = 'Selecciona un servicio';
-    if (!formData.appointment_date) newErrors.appointment_date = 'Selecciona una fecha';
-    if (!formData.appointment_time) newErrors.appointment_time = 'Selecciona un horario';
+  // Validaciones básicas
+  const newErrors = {};
+  if (!professionalId && !formData.professional) newErrors.professional = 'Selecciona un profesional';
+  if (!formData.service) newErrors.service = 'Selecciona un servicio';
+  if (!formData.appointment_date) newErrors.appointment_date = 'Selecciona una fecha';
+  if (!formData.appointment_time) newErrors.appointment_time = 'Selecciona un horario';
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  setLoading(true);
+  try {
+    // PREPARAR DATOS PARA EL BACKEND
+    const appointmentData = {
+      professional: professionalId || formData.professional,
+      service: formData.service,
+      appointment_date: formData.appointment_date,
+      appointment_time: formData.appointment_time,
+      notes: formData.notes,
+      status: 'pending' // Estado inicial
+    };
+
+    // LLAMADA REAL AL BACKEND
+    await appointmentService.createAppointment(appointmentData);
+    setSuccess('¡Cita agendada exitosamente! 📅');
+    
+    // Limpiar formulario
+    setFormData({
+      professional: '',
+      service: '',
+      appointment_date: '',
+      appointment_time: '',
+      notes: ''
+    });
+    
+    // Notificar al componente padre
+    if (onAppointmentCreated) {
+      onAppointmentCreated();
     }
-
-    setLoading(true);
-    try {
-      await appointmentService.createAppointment(formData);
-      setSuccess('¡Cita agendada exitosamente! 📅');
-      
-      // Limpiar formulario
-      setFormData({
-        professional: '',
-        service: '',
-        appointment_date: '',
-        appointment_time: '',
-        notes: ''
-      });
-      
-      // Notificar al componente padre
-      if (onAppointmentCreated) {
-        onAppointmentCreated();
+    
+    // Ocultar mensaje de éxito después de 3 segundos
+    setTimeout(() => setSuccess(''), 3000);
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    
+    // Manejar errores específicos del backend
+    if (error.response?.data) {
+      const backendErrors = error.response.data;
+      if (typeof backendErrors === 'object') {
+        setErrors(backendErrors);
+      } else if (typeof backendErrors === 'string') {
+        setErrors({ general: backendErrors });
       }
-      
-      // Ocultar mensaje de éxito después de 3 segundos
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      console.error('Error creating appointment:', error);
-      
-      // Manejar errores específicos del backend
-      if (error.response?.data) {
-        const backendErrors = error.response.data;
-        if (typeof backendErrors === 'object') {
-          setErrors(backendErrors);
-        } else if (typeof backendErrors === 'string') {
-          setErrors({ general: backendErrors });
-        }
-      } else {
-        setErrors({ general: 'Error al agendar la cita. Intenta nuevamente.' });
-      }
-    } finally {
-      setLoading(false);
+    } else {
+      setErrors({ general: 'Error al agendar la cita. Intenta nuevamente.' });
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getTomorrowDate = () => {
     const tomorrow = new Date();

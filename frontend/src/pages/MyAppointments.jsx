@@ -11,49 +11,53 @@ const MyAppointments = () => {
     loadAppointments();
   }, []);
 
-  const loadAppointments = async () => {
-    try {
-      // Esto cargará las citas reales cuando el endpoint esté listo
-      const data = await appointmentService.getAppointments();
-      setAppointments(data);
-    } catch (error) {
-      console.error('Error loading appointments:', error);
-      // Datos mock temporalmente
-      setAppointments([
-        {
-          id: 1,
-          professional_name: 'Dr. Juan Pérez',
-          specialty: 'Cardiología',
-          date: '2024-01-15',
-          time: '10:00',
-          status: 'confirmed',
-          address: 'Av. Principal 123'
-        },
-        {
-          id: 2, 
-          professional_name: 'Dra. María García',
-          specialty: 'Dermatología',
-          date: '2024-01-20',
-          time: '14:30',
-          status: 'pending',
-          address: 'Calle Secundaria 456'
-        }
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadAppointments = async () => {
+  setLoading(true);
+  try {
+    // LLAMADA REAL AL BACKEND - Obtener citas del usuario
+    const data = await appointmentService.getAppointments();
+    
+    // Transformar datos del backend al formato que espera el frontend
+    const transformedAppointments = data.map(appointment => ({
+      id: appointment.id,
+      professional_name: `${appointment.professional?.first_name || ''} ${appointment.professional?.last_name || ''}`,
+      specialty: appointment.professional?.specialty || 'Especialidad no especificada',
+      date: appointment.appointment_date,
+      time: appointment.appointment_time,
+      status: appointment.status || 'pending',
+      address: appointment.professional?.address || 'Dirección no especificada',
+      service: appointment.service?.name || 'Servicio no especificado',
+      notes: appointment.notes
+    }));
+    
+    setAppointments(transformedAppointments);
+  } catch (error) {
+    console.error('Error loading appointments:', error);
+    // En caso de error, mostrar array vacío
+    setAppointments([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const cancelAppointment = async (appointmentId) => {
-    if (window.confirm('¿Estás seguro de que quieres cancelar esta cita?')) {
-      try {
-        await appointmentService.updateAppointment(appointmentId, { status: 'cancelled' });
-        loadAppointments(); // Recargar lista
-      } catch (error) {
-        alert('Error al cancelar la cita');
-      }
+  if (window.confirm('¿Estás seguro de que quieres cancelar esta cita?')) {
+    try {
+      // LLAMADA REAL AL BACKEND - Actualizar estado a "cancelled"
+      await appointmentService.updateAppointment(appointmentId, { 
+        status: 'cancelled' 
+      });
+      
+      // Recargar la lista de citas para reflejar el cambio
+      await loadAppointments();
+      
+      alert('Cita cancelada exitosamente');
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      alert('Error al cancelar la cita. Intenta nuevamente.');
     }
-  };
+  }
+};
 
   const filteredAppointments = appointments.filter(apt => {
     if (filter === 'all') return true;

@@ -158,25 +158,15 @@ function App() {
               } 
             />
             
-              {/* Rutas para profesionales (placeholders por ahora) */}
-              <Route path="/agenda" element={
-                <div style={{padding: '2rem', textAlign: 'center'}}>
-                  <h1>📅 Agenda del Profesional</h1>
-                  <p>Página en desarrollo - Próximamente</p>
-                </div>
-              } />
-              <Route path="/pacientes" element={
-                <div style={{padding: '2rem', textAlign: 'center'}}>
-                  <h1>👥 Gestión de Pacientes</h1>
-                  <p>Página en desarrollo - Próximamente</p>
-                </div>
-              } />
-              <Route path="/expedientes" element={
-                <div style={{padding: '2rem', textAlign: 'center'}}>
-                  <h1>📋 Expedientes Médicos</h1>
-                  <p>Página en desarrollo - Próximamente</p>
-                </div>
-              } />
+              {/* Rutas para profesionales - REEMPLAZAR placeholders */}
+            <Route path="/agenda" element={<ProfessionalAgenda />} />
+            <Route path="/pacientes" element={<PatientManagement />} />
+            <Route path="/expedientes" element={
+              <div style={{padding: '2rem', textAlign: 'center'}}>
+                <h1>📋 Expedientes Médicos</h1>
+                <p>Página en desarrollo - Próximamente</p>
+              </div>
+} />
           </Routes>
         </div>
       </Router>
