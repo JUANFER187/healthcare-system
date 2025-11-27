@@ -101,64 +101,10 @@ function App() {
                 </PublicRoute>
               } 
             />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/mis-citas" 
-              element={
-                <ProtectedRoute>
-                  <MyAppointments />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/consultorios" 
-              element={
-              <ProtectedRoute>  
-                <Clinics />
-              </ProtectedRoute>
-              } 
-            />  
-            <Route 
-              path="/mi-historial" 
-              element={
-                <ProtectedRoute> 
-                  <MedicalHistory />
-                </ProtectedRoute>
-                } 
-              />
-            <Route 
-              path="/dashboard" 
-              element={
-                <Dashboard />
-                } 
-              />
-            <Route
-              path="/mis-citas" 
-              element={
-                <MyAppointments />
-                } 
-              />
-            <Route 
-              path="/consultorios" 
-              element={
-                <Clinics />
-                } 
-              />
-            <Route 
-              path="/mi-historial" 
-              element={
-                <MedicalHistory />
-              } 
-            />
-            
-              {/* Rutas para profesionales - REEMPLAZAR placeholders */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/mis-citas" element={<MyAppointments />} />
+            <Route path="/consultorios" element={<Clinics />} />
+            <Route path="/mi-historial" element={<MedicalHistory />} />
             <Route path="/agenda" element={<ProfessionalAgenda />} />
             <Route path="/pacientes" element={<PatientManagement />} />
             <Route path="/expedientes" element={
