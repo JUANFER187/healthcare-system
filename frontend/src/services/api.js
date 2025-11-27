@@ -117,7 +117,7 @@ export const userService = {
   }
 };
 
-// Servicios de citas - CORREGIR getServices temporalmente
+// Servicios de citas - CONECTAR CON ENDPOINTS REALES
 export const appointmentService = {
   getAppointments: async () => {
     const response = await api.get('/appointments/');
@@ -129,17 +129,19 @@ export const appointmentService = {
     return response.data;
   },
 
+  updateAppointment: async (appointmentId, updates) => {
+    const response = await api.patch(`/appointments/${appointmentId}/`, updates);
+    return response.data;
+  },
+
+  deleteAppointment: async (appointmentId) => {
+    const response = await api.delete(`/appointments/${appointmentId}/`);
+    return response.data;
+  },
+
   getServices: async () => {
-    try {
-      // Temporal - hasta crear endpoint real
-      return [
-        { id: 1, name: 'Consulta General', duration: 30, price: 500 },
-        { id: 2, name: 'Consulta Especializada', duration: 60, price: 1000 },
-      ];
-    } catch (error) {
-      console.error('Error fetching services:', error);
-      return [];
-    }
+    const response = await api.get('/appointments/services/');
+    return response.data;
   }
 };
 

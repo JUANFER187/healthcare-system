@@ -13,9 +13,10 @@ class AppointmentListView(generics.ListCreateAPIView):
     
     def get_queryset(self):
         user = self.request.user
-        if user.is_patient:
+        # CORREGIR: usar user_type en lugar de is_patient/is_professional
+        if user.user_type == 'patient':
             return Appointment.objects.filter(patient=user)
-        elif user.is_professional:
+        elif user.user_type == 'professional':
             return Appointment.objects.filter(professional=user)
         return Appointment.objects.none()
     
@@ -25,7 +26,7 @@ class AppointmentListView(generics.ListCreateAPIView):
         return AppointmentSerializer
     
     def perform_create(self, serializer):
-        if self.request.user.is_patient:
+        if self.request.user.user_type == 'patient':  # CORREGIR
             serializer.save(patient=self.request.user)
 
 class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -34,8 +35,9 @@ class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     
     def get_queryset(self):
         user = self.request.user
-        if user.is_patient:
+        # CORREGIR: usar user_type en lugar de is_patient/is_professional
+        if user.user_type == 'patient':
             return Appointment.objects.filter(patient=user)
-        elif user.is_professional:
+        elif user.user_type == 'professional':
             return Appointment.objects.filter(professional=user)
         return Appointment.objects.none()

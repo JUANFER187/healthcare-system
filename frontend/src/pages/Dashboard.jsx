@@ -37,19 +37,18 @@ const Dashboard = () => {
     lightText: '#718096'
   };
 
-//Definición de botones según el tipo de usuario
-  const buttons = user?.user_type === 'professional' 
-    ? [
-        { id: 1, path: '/agenda', icon: Calendar, label: 'Agenda', color: '#313851' },
-        { id: 2, path: '/pacientes', icon: Users, label: 'Pacientes', color: '#C2CBD3' },
-        { id: 3, path: '/expedientes', icon: FileText, label: 'Expedientes', color: '#313851' }
-      ]
-    : [
-        { id: 1, path: '/mis-citas', icon: Calendar, label: 'Mis Citas', color: '#313851' },
-        { id: 2, path: '/consultorios', icon: Users, label: 'Consultorios', color: '#C2CBD3' },
-        { id: 3, path: '/mi-historial', icon: FileText, label: 'Mi Historial', color: '#313851' }
-      ];
-    ];
+  // Definición de botones según el tipo de usuario
+  const professionalButtons = [
+    { id: 1, path: '/agenda', icon: Calendar, label: 'Agenda', color: '#313851' },
+    { id: 2, path: '/pacientes', icon: Users, label: 'Pacientes', color: '#313851' },
+    { id: 3, path: '/expedientes', icon: FileText, label: 'Expedientes', color: '#313851' }
+  ];
+
+  const patientButtons = [
+    { id: 1, path: '/mis-citas', icon: Calendar, label: 'Mis Citas', color: '#313851' },
+    { id: 2, path: '/consultorios', icon: Users, label: 'Consultorios', color: '#313851' },
+    { id: 3, path: '/mi-historial', icon: FileText, label: 'Mi Historial', color: '#313851' }
+  ];
 
   const buttons = user?.user_type === 'professional' ? professionalButtons : patientButtons;
 

@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard'
 import MyAppointments from './pages/MyAppointments';
 import Clinics from './pages/Clinics';
 import MedicalHistory from './pages/MedicalHistory';
+import ProfessionalAgenda from './pages/ProfessionalAgenda';
+import PatientManagement from './pages/PatientManagement';
 import './App.css'
 
 // Componente para proteger rutas
