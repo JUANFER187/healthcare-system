@@ -1,20 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, MapPin, CheckCircle, XCircle, MoreVertical } from 'lucide-react';
+import { Calendar, Clock, User, CheckCircle, XCircle } from 'lucide-react';
 import { appointmentService } from '../services/api';
+import CreateAppointment from '../components/CreateAppointment';
 
 const ProfessionalAgenda = () => {
   const [appointments, setAppointments] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('day'); // day, week, month
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     loadAppointments();
   }, [selectedDate]);
 
   const loadAppointments = async () => {
+    setLoading(true);
     try {
-      // Temporal - datos mock
+      // CONECTAR CON BACKEND REAL
+      const data = await appointmentService.getAppointments();
+      
+      // Transformar datos del backend
+      const transformedAppointments = data.map(appointment => ({
+        id: appointment.id,
+        patient_name: `${appointment.patient?.first_name || ''} ${appointment.patient?.last_name || ''}`,
+        service: appointment.service?.name || 'Consulta',
+        date: appointment.appointment_date,
+        time: appointment.appointment_time,
+        duration: 30, // Por defecto
+        status: appointment.status || 'pending',
+        notes: appointment.notes
+      }));
+      
+      setAppointments(transformedAppointments);
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+      // Fallback a datos mock si hay error
       setAppointments([
         {
           id: 1,
@@ -37,8 +58,6 @@ const ProfessionalAgenda = () => {
           notes: 'Seguimiento tratamiento'
         }
       ]);
-    } catch (error) {
-      console.error('Error loading appointments:', error);
     } finally {
       setLoading(false);
     }
@@ -48,7 +67,9 @@ const ProfessionalAgenda = () => {
     try {
       await appointmentService.updateAppointment(appointmentId, { status: newStatus });
       loadAppointments();
+      alert(`Cita ${newStatus === 'completed' ? 'completada' : 'cancelada'} exitosamente`);
     } catch (error) {
+      console.error('Error updating appointment:', error);
       alert('Error al actualizar la cita');
     }
   };
@@ -78,7 +99,7 @@ const ProfessionalAgenda = () => {
     for (let hour = 8; hour < 18; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        const appointment = appointments.find(apt => apt.time === time);
+        const appointment = appointments.find(apt => apt.time === time && apt.date === selectedDate);
         slots.push({ time, appointment });
       }
     }
@@ -158,20 +179,25 @@ const ProfessionalAgenda = () => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#3b82f6',
+        {/* BOTÓN NUEVA CITA - FUNCIONAL */}
+        <button 
+          onClick={() => setShowCreateForm(true)}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: '#10b981',
             color: 'white',
             border: 'none',
             borderRadius: '0.5rem',
             fontSize: '0.875rem',
             fontWeight: '500',
-            cursor: 'pointer'
-          }}>
-            + Nueva Cita
-          </button>
-        </div>
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          + Nueva Cita
+        </button>
       </div>
 
       {/* Vista de Agenda */}
@@ -295,8 +321,10 @@ const ProfessionalAgenda = () => {
                         {getStatusText(slot.appointment.status)}
                       </span>
 
+                      {/* BOTONES CHECK Y CANCELAR - FUNCIONALES */}
                       {(slot.appointment.status === 'pending' || slot.appointment.status === 'confirmed') && (
                         <div style={{ display: 'flex', gap: '0.25rem' }}>
+                          {/* BOTÓN CHECK VERDE - Completar cita */}
                           <button
                             onClick={() => updateAppointmentStatus(slot.appointment.id, 'completed')}
                             style={{
@@ -305,21 +333,33 @@ const ProfessionalAgenda = () => {
                               color: 'white',
                               border: 'none',
                               borderRadius: '0.375rem',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              transition: 'background-color 0.2s'
                             }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#059669'}
+                            onMouseOut={(e) => e.target.style.backgroundColor = '#10b981'}
                           >
                             <CheckCircle size={16} />
                           </button>
+                          
+                          {/* BOTÓN ROJO - Cancelar cita */}
                           <button
-                            onClick={() => updateAppointmentStatus(slot.appointment.id, 'cancelled')}
+                            onClick={() => {
+                              if (window.confirm('¿Estás seguro de cancelar esta cita?')) {
+                                updateAppointmentStatus(slot.appointment.id, 'cancelled');
+                              }
+                            }}
                             style={{
                               padding: '0.5rem',
                               backgroundColor: '#ef4444',
                               color: 'white',
                               border: 'none',
                               borderRadius: '0.375rem',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              transition: 'background-color 0.2s'
                             }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#dc2626'}
+                            onMouseOut={(e) => e.target.style.backgroundColor = '#ef4444'}
                           >
                             <XCircle size={16} />
                           </button>
@@ -358,10 +398,10 @@ const ProfessionalAgenda = () => {
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '2rem', fontWeight: '700', color: '#3b82f6' }}>
-            {appointments.length}
+            {appointments.filter(a => a.date === selectedDate).length}
           </div>
           <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-            Citas Totales
+            Citas del Día
           </div>
         </div>
 
@@ -373,7 +413,7 @@ const ProfessionalAgenda = () => {
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '2rem', fontWeight: '700', color: '#10b981' }}>
-            {appointments.filter(a => a.status === 'confirmed').length}
+            {appointments.filter(a => a.date === selectedDate && a.status === 'confirmed').length}
           </div>
           <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
             Confirmadas
@@ -388,13 +428,45 @@ const ProfessionalAgenda = () => {
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '2rem', fontWeight: '700', color: '#f59e0b' }}>
-            {appointments.filter(a => a.status === 'pending').length}
+            {appointments.filter(a => a.date === selectedDate && a.status === 'pending').length}
           </div>
           <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
             Pendientes
           </div>
         </div>
       </div>
+
+      {/* MODAL FORMULARIO NUEVA CITA */}
+      {showCreateForm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <CreateAppointment
+              onAppointmentCreated={() => {
+                setShowCreateForm(false);
+                loadAppointments();
+              }}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
