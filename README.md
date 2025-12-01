@@ -64,8 +64,10 @@ docker-compose up --build
 # Backend API: http://localhost:8000
 # Admin Django: http://localhost:8000/admin
 # n8n: http://localhost:5678
+```
 
-#### Opción 2: Desarrollo local
+## Opción 2: Desarrollo local
+```bash
 # Backend
 cd backend
 python -m venv venv
@@ -78,6 +80,7 @@ python manage.py runserver
 cd frontend
 npm install
 npm run dev
+```
 
 🔐 Autenticación
 El sistema utiliza JWT (JSON Web Tokens) para autenticación segura:
