@@ -66,7 +66,7 @@ docker-compose up --build
 # n8n: http://localhost:5678
 ```
 
-## Opción 2: Desarrollo local
+### Opción 2: Desarrollo local
 ```bash
 # Backend
 cd backend
@@ -82,43 +82,43 @@ npm install
 npm run dev
 ```
 
-🔐 Autenticación
+## 🔐 Autenticación
 El sistema utiliza JWT (JSON Web Tokens) para autenticación segura:
     Registro diferenciado: Pacientes vs Profesionales
     Login seguro: Tokens de acceso y refresh
     Protección de rutas: Middleware de autenticación
     Roles: Permisos específicos por tipo de usuario
 
-📊 API Endpoints
+## 📊 API Endpoints
 Autenticación
     POST /api/auth/login/ - Inicio de sesión
     POST /api/auth/token/refresh/ - Refresh token
     POST /api/users/register/ - Registro de usuarios
 
-Citas
+## Citas
     GET /api/appointments/ - Listar citas (filtrado por usuario)
     POST /api/appointments/ - Crear nueva cita
     PATCH /api/appointments/{id}/ - Actualizar cita
     DELETE /api/appointments/{id}/ - Cancelar cita
 
-Usuarios
+## Usuarios
     GET /api/users/me/ - Perfil del usuario actual
     GET /api/users/professionals/ - Lista de profesionales
 
-🎨 UI/UX Features
-Paleta de Colores
+## 🎨 UI/UX Features
+### Paleta de Colores
     Primario: #F6F3ED (fondo claro)
     Secundario: #C2CBD3 (gris azulado)
     Acento: #313851 (azul oscuro profesional)
 
-Componentes Clave
+### Componentes Clave
     Dashboard diferenciado por rol de usuario
     Cards circulares para acciones principales
     Menú hamburguesa animado
     Formularios inteligentes que eliminan redundancias
     Gráficas interactivas para estadísticas
 
-🚧 Próximas Funcionalidades
+### 🚧 Próximas Funcionalidades
     Video consultas integradas
     Prescripciones digitales
     Sistema de facturación
@@ -126,28 +126,29 @@ Componentes Clave
     Integración con sistemas de salud
     Chat en tiempo real para consultas
 
-🤝 Contribución
+### 🤝 Contribución
     Fork el proyecto
     Crear una rama (git checkout -b feature/nueva-funcionalidad)
     Commit cambios (git commit -m 'Agrega nueva funcionalidad')
     Push a la rama (git push origin feature/nueva-funcionalidad)
     Abrir un Pull Request
 
-📄 Licencia
+### 📄 Licencia
 Este proyecto está bajo la licencia MIT. Ver el archivo LICENSE para más detalles.
 👨‍💻 Autor
 
-Juan Fernando - GitHub
+### Juan Fernando - GitHub
 🙏 Agradecimientos
     DeepSeek por la asistencia en desarrollo
     Comunidad React por componentes y mejores prácticas
     Django REST Framework por la robustez del backend
 
-    🌐 URLs de Desarrollo
+### 🌐 URLs de Desarrollo
 Servicio	URL	Puerto
 Frontend	http://localhost:3000	3000
 Backend	http://localhost:8000	8000
 n8n	http://localhost:5678	5678
 PostgreSQL	localhost	5432
 
-Nota: Requiere Docker y Docker Compose instalados.
+## Nota:
+Requiere Docker y Docker Compose instalados.
