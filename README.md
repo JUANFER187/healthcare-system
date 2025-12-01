@@ -95,13 +95,13 @@ Autenticación
     POST /api/auth/token/refresh/ - Refresh token
     POST /api/users/register/ - Registro de usuarios
 
-## Citas
+### Citas
     GET /api/appointments/ - Listar citas (filtrado por usuario)
     POST /api/appointments/ - Crear nueva cita
     PATCH /api/appointments/{id}/ - Actualizar cita
     DELETE /api/appointments/{id}/ - Cancelar cita
 
-## Usuarios
+### Usuarios
     GET /api/users/me/ - Perfil del usuario actual
     GET /api/users/professionals/ - Lista de profesionales
 
