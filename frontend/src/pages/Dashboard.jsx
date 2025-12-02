@@ -158,7 +158,7 @@ const Dashboard = () => {
       <main style={{
         padding: '2rem',
         maxWidth: '1200px',
-        margin: '0 auto'
+        margin: '0 auto',
       }}>
         {/* Tarjeta de Bienvenida */}
         <div style={{
@@ -259,13 +259,14 @@ const Dashboard = () => {
           })}
         </div>
 
-        {/* Sección de Estadísticas - DESPUÉS de las cards principales */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-          gap: '1.5rem',
-          marginTop: '3rem'
-        }}>
+        {/* Sección de Estadísticas - SOLO PARA PROFESIONALES */}
+        {user?.user_type === 'professional' && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+            gap: '1.5rem',
+            marginTop: '3rem'
+          }}>
           
           {/* Card de Ingresos Esperados - MEJOR ESPACIADO */}
           <div style={{
@@ -406,8 +407,185 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </main>
-
+        )}
+      {/* PARA PACIENTES: Mostrar recordatorios de citas */}
+      {user?.user_type === 'patient' && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+          gap: '1.5rem',
+          marginTop: '3rem'
+        }}>
+          
+          {/* Card de Recordatorios de Citas */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '2rem',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            border: `1px solid ${colors.secondary}`
+          }}>
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              color: colors.accent,
+              marginBottom: '1rem'
+            }}>
+              📅 Tienes ({pendingAppointments.length}) citas agendadas pendientes
+            </h3>
+            
+            {pendingAppointments.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <p style={{ color: colors.lightText, marginBottom: '1rem' }}>
+                  No has agendado ninguna cita aún
+                </p>
+                <button
+                  onClick={() => navigate('/consultorios')}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: colors.accent,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  + Agendar Cita
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {pendingAppointments.map(appointment => (
+                  <div
+                    key={appointment.id}
+                    style={{
+                      backgroundColor: '#f8fafc',
+                      border: `1px solid ${colors.secondary}`,
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      position: 'relative'
+                    }}
+                  >
+                    {/* Badge de Confirmado */}
+                    {appointment.status === 'confirmed' && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '0.75rem',
+                        right: '0.75rem',
+                        backgroundColor: '#10b981',
+                        color: 'white',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '1rem',
+                        fontSize: '0.75rem',
+                        fontWeight: '500'
+                      }}>
+                        Confirmado
+                      </div>
+                    )}
+                    
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      marginBottom: '1rem'
+                    }}>
+                      <div style={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: colors.accent,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '1.2rem'
+                      }}>
+                        {appointment.professional_name?.charAt(0) || 'D'}
+                      </div>
+                      
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{
+                          margin: '0 0 0.25rem 0',
+                          color: colors.accent,
+                          fontSize: '1.1rem'
+                        }}>
+                          {appointment.professional_name || 'Profesional'}
+                        </h4>
+                        <p style={{
+                          margin: 0,
+                          color: colors.lightText,
+                          fontSize: '0.9rem'
+                        }}>
+                          {appointment.specialty || 'Especialidad'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      borderTop: `1px solid ${colors.secondary}`,
+                      paddingTop: '1rem'
+                    }}>
+                      <div>
+                        <p style={{
+                          margin: '0 0 0.25rem 0',
+                          fontWeight: '600',
+                          color: colors.accent
+                        }}>
+                          {appointment.formatted_date}
+                        </p>
+                        <p style={{
+                          margin: 0,
+                          color: colors.lightText,
+                          fontSize: '0.9rem'
+                        }}>
+                          {appointment.formatted_time}
+                        </p>
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {appointment.status !== 'confirmed' && (
+                          <button
+                            onClick={() => confirmAppointment(appointment.id)}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              backgroundColor: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            Confirmar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => cancelAppointment(appointment.id)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '0.875rem'
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+)}
       {/* Sidebar Menu */}
       {sidebarOpen && (
         <div style={{
@@ -495,6 +673,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+      </main>
 
       {/* Overlay para cerrar sidebar */}
       {sidebarOpen && (
