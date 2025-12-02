@@ -80,18 +80,6 @@ services:
     depends_on:
       - n8n
 
-  # deepseek para IA
-  deepseek:
-    image: deepseek-ai/deepseek-coder:latest
-    container_name: healthcare-deepseek
-    ports:
-      - "3002:3002"
-    environment:
-      - MODEL=deepseek-coder
-    volumes:
-      - deepseek-data:/app/data
-    restart: unless-stopped
-
 volumes:
   postgres_data:
   n8n_data:

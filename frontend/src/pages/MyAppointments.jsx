@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { appointmentService } from '../services/api';
 import { Calendar, Clock, User, MapPin, X, Edit } from 'lucide-react';
+import Header from '../components/Header';
 
 const MyAppointments = () => {
   const [appointments, setAppointments] = useState([]);
