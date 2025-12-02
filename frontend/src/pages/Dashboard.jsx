@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -15,11 +15,13 @@ import {
 } from 'lucide-react';
 
 
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuAnimation, setMenuAnimation] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [pendingAppointments, setPendingAppointments] = useState([]);
   const navigate = useNavigate();
 
   const toggleMenu = () => {
@@ -52,12 +54,62 @@ const Dashboard = () => {
 
   const buttons = user?.user_type === 'professional' ? professionalButtons : patientButtons;
 
+  // Cargar citas pendientes
+  useEffect(() => {
+    if (user?.user_type === 'patient') {
+      loadPendingAppointments();
+    }
+  }, [user]);
+
+  const loadPendingAppointments = async () => {
+    try {
+      const data = await appointmentService.getAppointments();
+      const pending = data.filter(apt => 
+        apt.status === 'pending' || apt.status === 'confirmed'
+      ).map(apt => ({
+        id: apt.id,
+        professional_name: `${apt.professional?.first_name || ''} ${apt.professional?.last_name || ''}`,
+        specialty: apt.professional?.specialty || 'Consulta General',
+        formatted_date: new Date(apt.appointment_date).toLocaleDateString('es-ES', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        }),
+        formatted_time: new Date(`2000-01-01T${apt.appointment_time}`).toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
+        status: apt.status
+      }));
+      setPendingAppointments(pending);
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+    }
+  };
+
+  const confirmAppointment = async (appointmentId) => {
+    try {
+      await appointmentService.updateAppointment(appointmentId, { status: 'confirmed' });
+      loadPendingAppointments();
+    } catch (error) {
+      console.error('Error confirming appointment:', error);
+    }
+  };
+
+  const cancelAppointment = async (appointmentId) => {
+    if (window.confirm('¿Estás seguro de cancelar esta cita?')) {
+      try {
+        await appointmentService.updateAppointment(appointmentId, { status: 'cancelled' });
+        loadPendingAppointments();
+      } catch (error) {
+        console.error('Error cancelling appointment:', error);
+      }
+    }
+  }  
+ 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: colors.primary,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    }}>
+    <>
       {/* Header */}
       <header style={{
         backgroundColor: colors.accent,
@@ -426,7 +478,7 @@ const Dashboard = () => {
             border: `1px solid ${colors.secondary}`
           }}>
             <h3 style={{
-              fontSize: '1.5rem',
+              fontSize: '1.7rem',
               fontWeight: '700',
               color: colors.accent,
               marginBottom: '1rem'
@@ -701,7 +753,7 @@ const Dashboard = () => {
           }
         }
       `}</style>
-    </div>
+    </>
   );
 };
 
