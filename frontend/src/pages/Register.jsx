@@ -92,7 +92,7 @@ const Register = () => {
             color: '#2563eb',
             marginBottom: '0.5rem'
           }}>
-            SaludDigital
+            Mediturno
           </h1>
           <h2 style={{ 
             fontSize: '1.5rem', 
