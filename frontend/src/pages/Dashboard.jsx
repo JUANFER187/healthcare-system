@@ -22,12 +22,6 @@ const Dashboard = () => {
   const [pendingAppointments, setPendingAppointments] = useState([]);
   const navigate = useNavigate();
 
-  const toggleMenu = () => {
-    const newState = !sidebarOpen;
-    setSidebarOpen(newState);
-    setMenuAnimation(newState); // Mismo estado para ambos
-  };
-
   // Paleta de colores profesional
   const colors = {
     primary: '#F6F3ED',
