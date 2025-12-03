@@ -140,7 +140,7 @@ const Dashboard = () => {
             fontWeight: '600',
             margin: 0
           }}>
-            SaludDigital
+            Mediturno
           </h1>
         </div>
 
@@ -473,21 +473,23 @@ const Dashboard = () => {
           <div style={{
             backgroundColor: 'white',
             borderRadius: '16px',
-            padding: '2rem',
+            padding: '4rem',
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
             border: `1px solid ${colors.secondary}`
           }}>
             <h3 style={{
-              fontSize: '1.7rem',
+              fontSize: '1.6rem',
               fontWeight: '700',
               color: colors.accent,
-              marginBottom: '1rem'
+              marginBottom: '0.5rem',
+              textAlign: 'center',  
+              width: '100%'         
             }}>
               📅 Tienes ({pendingAppointments.length}) citas agendadas pendientes
             </h3>
             
             {pendingAppointments.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <div style={{ textAlign: 'center', padding: '0.2rem' }}>
                 <p style={{ color: colors.lightText, marginBottom: '1rem' }}>
                   No has agendado ninguna cita aún
                 </p>
