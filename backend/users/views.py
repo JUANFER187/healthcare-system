@@ -1,10 +1,9 @@
-from rest_framework import status, generics, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 from .models import User
-from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
+from .serializers import UserSerializer
 
 class UserRegistrationView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -41,12 +40,22 @@ def user_login_view(request):
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserProfileView(generics.RetrieveUpdateAPIView):
-    serializer_class = UserProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+class UserProfileView(APIView):
+    """
+    View para obtener el perfil del usuario logueado
+    """
+    permission_classes = [IsAuthenticated]
     
-    def get_object(self):
-        return self.request.user
+    def get(self, request):
+        try:
+            user = request.user
+            serializer = UserSerializer(user)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Usuario no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class ProfessionalListView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
