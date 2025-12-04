@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import AppointmentList from '../../components/AppointmentList';
 import CreateAppointment from '../../components/CreateAppointment';
+import Header from '../components/Header'; 
 
 const Appointments = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   return (
+    <>
+    <Header />
     <div style={{ 
       minHeight: '100vh', 
       backgroundColor: '#f8fafc',
@@ -112,6 +115,7 @@ const Appointments = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

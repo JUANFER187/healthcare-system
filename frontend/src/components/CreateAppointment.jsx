@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { appointmentService, userService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
+  const { user } = useAuth();
+  
   const [formData, setFormData] = useState({
     professional: '',
     service: '',
-    appointment_date: '',
-    appointment_time: '',
+    date: '',
+    time: '',
+    reason: '',
     notes: ''
   });
+  
   const [professionals, setProfessionals] = useState([]);
   const [services, setServices] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
@@ -17,17 +22,15 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState('');
 
-  // Cargar profesionales y servicios
   useEffect(() => {
     loadInitialData();
   }, []);
 
-  // Cargar horarios disponibles cuando cambie profesional o fecha
   useEffect(() => {
-    if (formData.professional && formData.appointment_date) {
+    if (formData.professional && formData.date) {
       loadAvailableSlots();
     }
-  }, [formData.professional, formData.appointment_date]);
+  }, [formData.professional, formData.date]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -47,15 +50,16 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
   };
 
   const loadAvailableSlots = async () => {
-    if (!formData.professional || !formData.appointment_date) return;
+    if (!formData.professional || !formData.date) return;
     
     setLoadingSlots(true);
     try {
-      // Simular horarios disponibles (en un sistema real, esto vendría del backend)
-      const slots = generateTimeSlots();
+      const slots = await appointmentService.getAvailableSlots(formData.professional, formData.date);
       setAvailableSlots(slots);
     } catch (error) {
-      console.error('Error loading available slots:', error);
+      console.warn('Using generated time slots:', error);
+      const slots = generateTimeSlots();
+      setAvailableSlots(slots);
     } finally {
       setLoadingSlots(false);
     }
@@ -63,11 +67,11 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
 
   const generateTimeSlots = () => {
     const slots = [];
-    const startHour = 8; // 8:00 AM
-    const endHour = 18; // 6:00 PM
+    const startHour = 8;
+    const endHour = 18;
     
     for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) { // Cada 30 minutos
+      for (let minute = 0; minute < 60; minute += 30) {
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push(timeString);
       }
@@ -82,82 +86,133 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
       [name]: value
     }));
     
-    // Limpiar errores del campo
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
       }));
     }
+    
+    if (name === 'date' || name === 'professional') {
+      setFormData(prev => ({
+        ...prev,
+        time: ''
+      }));
+      setAvailableSlots([]);
+    }
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setErrors({});
-  setSuccess('');
+    e.preventDefault();
+    setErrors({});
+    setSuccess('');
 
-  // Validaciones básicas
-  const newErrors = {};
-  if (!professionalId && !formData.professional) newErrors.professional = 'Selecciona un profesional';
-  if (!formData.service) newErrors.service = 'Selecciona un servicio';
-  if (!formData.appointment_date) newErrors.appointment_date = 'Selecciona una fecha';
-  if (!formData.appointment_time) newErrors.appointment_time = 'Selecciona un horario';
+    const newErrors = {};
+    if (!formData.professional) newErrors.professional = 'Selecciona un profesional';
+    if (!formData.service) newErrors.service = 'Selecciona un servicio';
+    if (!formData.date) newErrors.date = 'Selecciona una fecha';
+    if (!formData.time) newErrors.time = 'Selecciona un horario';
+    if (!formData.reason) newErrors.reason = 'Indica el motivo de la consulta';
 
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    return;
-  }
-
-  setLoading(true);
-  try {
-    // PREPARAR DATOS PARA EL BACKEND
-    const appointmentData = {
-      professional: professionalId || formData.professional,
-      service: formData.service,
-      appointment_date: formData.appointment_date,
-      appointment_time: formData.appointment_time,
-      notes: formData.notes,
-      status: 'pending' // Estado inicial
-    };
-
-    // LLAMADA REAL AL BACKEND
-    await appointmentService.createAppointment(appointmentData);
-    setSuccess('¡Cita agendada exitosamente! 📅');
-    
-    // Limpiar formulario
-    setFormData({
-      professional: '',
-      service: '',
-      appointment_date: '',
-      appointment_time: '',
-      notes: ''
-    });
-    
-    // Notificar al componente padre
-    if (onAppointmentCreated) {
-      onAppointmentCreated();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
     }
-    
-    // Ocultar mensaje de éxito después de 3 segundos
-    setTimeout(() => setSuccess(''), 3000);
-  } catch (error) {
-    console.error('Error creating appointment:', error);
-    
-    // Manejar errores específicos del backend
-    if (error.response?.data) {
-      const backendErrors = error.response.data;
-      if (typeof backendErrors === 'object') {
-        setErrors(backendErrors);
-      } else if (typeof backendErrors === 'string') {
-        setErrors({ general: backendErrors });
+
+    setLoading(true);
+    try {
+      const professionalId = parseInt(formData.professional, 10);
+      const serviceId = parseInt(formData.service, 10);
+      
+      if (isNaN(professionalId) || isNaN(serviceId)) {
+        throw new Error('IDs de profesional o servicio inválidos');
       }
-    } else {
-      setErrors({ general: 'Error al agendar la cita. Intenta nuevamente.' });
+
+      let formattedTime = formData.time.trim();
+      const timeParts = formattedTime.split(':');
+      
+      if (timeParts.length === 2) {
+        const hours = timeParts[0].padStart(2, '0');
+        const minutes = timeParts[1].padStart(2, '0');
+        formattedTime = `${hours}:${minutes}:00`;
+      } else if (timeParts.length === 3) {
+        const hours = timeParts[0].padStart(2, '0');
+        const minutes = timeParts[1].padStart(2, '0');
+        const seconds = timeParts[2].padStart(2, '0');
+        formattedTime = `${hours}:${minutes}:${seconds}`;
+      } else {
+        formattedTime = '09:00:00';
+      }
+
+      const appointmentData = {
+        professional: professionalId,
+        service: serviceId,
+        date: formData.date,
+        time: formattedTime,
+        reason: formData.reason,
+        notes: formData.notes || '',
+        status: 'scheduled'
+      };
+
+      console.log('📤 Enviando cita al backend:', appointmentData);
+      
+      const createdAppointment = await appointmentService.createAppointment(appointmentData);
+      
+      setSuccess('¡Cita agendada exitosamente! 📅');
+      
+      setFormData({
+        professional: '',
+        service: '',
+        date: '',
+        time: '',
+        reason: '',
+        notes: ''
+      });
+      setAvailableSlots([]);
+      
+      if (onAppointmentCreated) {
+        onAppointmentCreated(createdAppointment);
+      }
+      
+      setTimeout(() => setSuccess(''), 4000);
+    } catch (error) {
+      console.error('❌ Error completo:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      if (error.response?.data) {
+        const backendErrors = error.response.data;
+        
+        if (typeof backendErrors === 'object') {
+          const errorMessages = [];
+          
+          Object.keys(backendErrors).forEach(key => {
+            if (Array.isArray(backendErrors[key])) {
+              errorMessages.push(`${key}: ${backendErrors[key][0]}`);
+            } else {
+              errorMessages.push(`${key}: ${backendErrors[key]}`);
+            }
+          });
+          
+          if (errorMessages.length > 0) {
+            setErrors({ general: errorMessages.join(', ') });
+          } else if (backendErrors.detail) {
+            setErrors({ general: backendErrors.detail });
+          } else if (backendErrors.non_field_errors) {
+            setErrors({ general: backendErrors.non_field_errors });
+          }
+        } else if (typeof backendErrors === 'string') {
+          setErrors({ general: backendErrors });
+        }
+      } else {
+        setErrors({ general: error.message || 'Error al agendar la cita' });
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const getTomorrowDate = () => {
     const tomorrow = new Date();
@@ -167,8 +222,13 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
 
   const getMaxDate = () => {
     const maxDate = new Date();
-    maxDate.setMonth(maxDate.getMonth() + 3); // 3 meses en el futuro
+    maxDate.setMonth(maxDate.getMonth() + 3);
     return maxDate.toISOString().split('T')[0];
+  };
+
+  const formatProfessionalName = (professional) => {
+    const title = professional.gender === 'F' ? 'Dra.' : 'Dr.';
+    return `${title} ${professional.first_name} ${professional.last_name}`;
   };
 
   if (loading && professionals.length === 0) {
@@ -177,7 +237,6 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
         backgroundColor: 'white',
         borderRadius: '12px',
         padding: '2rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         textAlign: 'center'
       }}>
         <div style={{
@@ -190,7 +249,7 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
           margin: '0 auto 1rem auto'
         }}></div>
         <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
-          Cargando datos...
+          Cargando profesionales y servicios...
         </p>
       </div>
     );
@@ -201,9 +260,9 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
       backgroundColor: 'white',
       borderRadius: '12px',
       padding: '2rem',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      maxWidth: '600px',
+      margin: '0 auto'
     }}>
-      {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <h3 style={{
           fontSize: '1.5rem',
@@ -218,12 +277,13 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
           color: '#6b7280',
           margin: 0
         }}>
-          Completa los datos para programar tu cita médica
+          {user?.user_type === 'professional' 
+            ? 'Agendar cita para paciente' 
+            : 'Completa los datos para programar tu cita médica'}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        {/* Mensajes de éxito y error general */}
+      <form onSubmit={handleSubmit} noValidate>
         {success && (
           <div style={{
             backgroundColor: '#dcfce7',
@@ -233,9 +293,14 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
             borderRadius: '0.375rem',
             marginBottom: '1.5rem',
             fontSize: '0.875rem',
-            textAlign: 'center'
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem'
           }}>
-            {success}
+            <span>✅</span>
+            <span>{success}</span>
           </div>
         )}
 
@@ -248,14 +313,18 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
             borderRadius: '0.375rem',
             marginBottom: '1.5rem',
             fontSize: '0.875rem',
-            textAlign: 'center'
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem'
           }}>
-            {errors.general}
+            <span>❌</span>
+            <span>{errors.general}</span>
           </div>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Profesional */}
           <div>
             <label htmlFor="professional" style={{
               display: 'block',
@@ -271,6 +340,7 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
               name="professional"
               value={formData.professional}
               onChange={handleChange}
+              required
               style={{
                 width: '100%',
                 padding: '0.75rem',
@@ -283,8 +353,8 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
             >
               <option value="">Selecciona un profesional</option>
               {professionals.map(professional => (
-                <option key={professional.id} value={professional.id}>
-                  Dr. {professional.first_name} {professional.last_name} - {professional.specialty}
+                <option key={professional.id} value={professional.id.toString()}>
+                  {formatProfessionalName(professional)} - {professional.specialty || 'General'}
                 </option>
               ))}
             </select>
@@ -294,12 +364,11 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
                 fontSize: '0.75rem',
                 margin: '0.25rem 0 0 0'
               }}>
-                {errors.professional}
+                ⚠️ {errors.professional}
               </p>
             )}
           </div>
 
-          {/* Servicio */}
           <div>
             <label htmlFor="service" style={{
               display: 'block',
@@ -315,6 +384,7 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
               name="service"
               value={formData.service}
               onChange={handleChange}
+              required
               style={{
                 width: '100%',
                 padding: '0.75rem',
@@ -327,8 +397,8 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
             >
               <option value="">Selecciona un servicio</option>
               {services.map(service => (
-                <option key={service.id} value={service.id}>
-                  {service.name} - {service.duration}min - ${service.price}
+                <option key={service.id} value={service.id.toString()}>
+                  {service.name} - {service.duration || 30}min
                 </option>
               ))}
             </select>
@@ -338,16 +408,14 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
                 fontSize: '0.75rem',
                 margin: '0.25rem 0 0 0'
               }}>
-                {errors.service}
+                ⚠️ {errors.service}
               </p>
             )}
           </div>
 
-          {/* Fecha y Hora */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            {/* Fecha */}
             <div>
-              <label htmlFor="appointment_date" style={{
+              <label htmlFor="date" style={{
                 display: 'block',
                 fontSize: '0.875rem',
                 fontWeight: '500',
@@ -358,35 +426,35 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
               </label>
               <input
                 type="date"
-                id="appointment_date"
-                name="appointment_date"
-                value={formData.appointment_date}
+                id="date"
+                name="date"
+                value={formData.date}
                 onChange={handleChange}
                 min={getTomorrowDate()}
                 max={getMaxDate()}
+                required
                 style={{
                   width: '100%',
                   padding: '0.75rem',
-                  border: `1px solid ${errors.appointment_date ? '#fca5a5' : '#d1d5db'}`,
+                  border: `1px solid ${errors.date ? '#fca5a5' : '#d1d5db'}`,
                   borderRadius: '0.5rem',
                   fontSize: '0.875rem',
                   boxSizing: 'border-box'
                 }}
               />
-              {errors.appointment_date && (
+              {errors.date && (
                 <p style={{
                   color: '#dc2626',
                   fontSize: '0.75rem',
                   margin: '0.25rem 0 0 0'
                 }}>
-                  {errors.appointment_date}
+                  ⚠️ {errors.date}
                 </p>
               )}
             </div>
 
-            {/* Hora */}
             <div>
-              <label htmlFor="appointment_time" style={{
+              <label htmlFor="time" style={{
                 display: 'block',
                 fontSize: '0.875rem',
                 fontWeight: '500',
@@ -396,23 +464,27 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
                 ⏰ Hora *
               </label>
               <select
-                id="appointment_time"
-                name="appointment_time"
-                value={formData.appointment_time}
+                id="time"
+                name="time"
+                value={formData.time}
                 onChange={handleChange}
-                disabled={!formData.professional || !formData.appointment_date || loadingSlots}
+                disabled={!formData.professional || !formData.date || loadingSlots}
+                required
                 style={{
                   width: '100%',
                   padding: '0.75rem',
-                  border: `1px solid ${errors.appointment_time ? '#fca5a5' : '#d1d5db'}`,
+                  border: `1px solid ${errors.time ? '#fca5a5' : '#d1d5db'}`,
                   borderRadius: '0.5rem',
                   fontSize: '0.875rem',
-                  backgroundColor: 'white',
+                  backgroundColor: !formData.professional || !formData.date || loadingSlots ? '#f9fafb' : 'white',
                   boxSizing: 'border-box'
                 }}
               >
                 <option value="">
-                  {loadingSlots ? 'Cargando horarios...' : 'Selecciona un horario'}
+                  {loadingSlots ? 'Cargando horarios...' : 
+                   !formData.professional ? 'Selecciona profesional' :
+                   !formData.date ? 'Selecciona fecha' : 
+                   'Selecciona un horario'}
                 </option>
                 {availableSlots.map(slot => (
                   <option key={slot} value={slot}>
@@ -420,19 +492,56 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
                   </option>
                 ))}
               </select>
-              {errors.appointment_time && (
+              {errors.time && (
                 <p style={{
                   color: '#dc2626',
                   fontSize: '0.75rem',
                   margin: '0.25rem 0 0 0'
                 }}>
-                  {errors.appointment_time}
+                  ⚠️ {errors.time}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Notas */}
+          <div>
+            <label htmlFor="reason" style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              color: '#374151',
+              marginBottom: '0.5rem'
+            }}>
+              📝 Motivo de consulta *
+            </label>
+            <input
+              type="text"
+              id="reason"
+              name="reason"
+              value={formData.reason}
+              onChange={handleChange}
+              placeholder="Ej: Dolor de cabeza, Control rutinario..."
+              required
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: `1px solid ${errors.reason ? '#fca5a5' : '#d1d5db'}`,
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem',
+                boxSizing: 'border-box'
+              }}
+            />
+            {errors.reason && (
+              <p style={{
+                color: '#dc2626',
+                fontSize: '0.75rem',
+                margin: '0.25rem 0 0 0'
+              }}>
+                ⚠️ {errors.reason}
+              </p>
+            )}
+          </div>
+
           <div>
             <label htmlFor="notes" style={{
               display: 'block',
@@ -441,7 +550,7 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
               color: '#374151',
               marginBottom: '0.5rem'
             }}>
-              📝 Notas adicionales (opcional)
+              📋 Notas adicionales (opcional)
             </label>
             <textarea
               id="notes"
@@ -449,7 +558,7 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
               value={formData.notes}
               onChange={handleChange}
               rows={3}
-              placeholder="Describe brevemente el motivo de tu consulta o alguna información adicional..."
+              placeholder="Información adicional, alergias, medicamentos..."
               style={{
                 width: '100%',
                 padding: '0.75rem',
@@ -463,12 +572,13 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
           </div>
         </div>
 
-        {/* Botones */}
         <div style={{
           display: 'flex',
           gap: '1rem',
           justifyContent: 'flex-end',
-          marginTop: '2rem'
+          marginTop: '2rem',
+          paddingTop: '1.5rem',
+          borderTop: '1px solid #e5e7eb'
         }}>
           <button
             type="button"
@@ -482,8 +592,7 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
               color: '#374151',
               fontSize: '0.875rem',
               fontWeight: '500',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.5 : 1
+              cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
             Cancelar
@@ -500,8 +609,9 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
               fontSize: '0.875rem',
               fontWeight: '500',
               cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.5 : 1,
-              transition: 'background-color 0.2s'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
             {loading ? (
@@ -524,6 +634,13 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
           </button>
         </div>
       </form>
+
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

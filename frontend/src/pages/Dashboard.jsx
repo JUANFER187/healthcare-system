@@ -11,18 +11,19 @@ import {
   X,
   Stethoscope,
   Users,
-  FileText
+  FileText,
+  Plus
 } from 'lucide-react';
 import Header from '../components/Header';
-
-
+import CreateAppointment from '../components/CreateAppointment';
+import { appointmentService } from '../services/api';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [pendingAppointments, setPendingAppointments] = useState([]);
+  const [showCreateAppointment, setShowCreateAppointment] = useState(false);
   const navigate = useNavigate();
 
-  // Paleta de colores profesional
   const colors = {
     primary: '#F6F3ED',
     secondary: '#C2CBD3', 
@@ -31,7 +32,6 @@ const Dashboard = () => {
     lightText: '#718096'
   };
 
-  // Definición de botones según el tipo de usuario
   const professionalButtons = [
     { id: 1, path: '/agenda', icon: Calendar, label: 'Agenda', color: '#313851' },
     { id: 2, path: '/pacientes', icon: Users, label: 'Pacientes', color: '#313851' },
@@ -46,7 +46,6 @@ const Dashboard = () => {
 
   const buttons = user?.user_type === 'professional' ? professionalButtons : patientButtons;
 
-  // Cargar citas pendientes
   useEffect(() => {
     if (user?.user_type === 'patient') {
       loadPendingAppointments();
@@ -98,26 +97,109 @@ const Dashboard = () => {
         console.error('Error cancelling appointment:', error);
       }
     }
-  }  
- 
+  };
+
+  const handleAppointmentCreated = (newAppointment) => {
+    console.log('Nueva cita creada:', newAppointment);
+    setShowCreateAppointment(false);
+    if (user?.user_type === 'patient') {
+      loadPendingAppointments();
+    }
+  };
+
   return (
     <>
-      <Header />  {/* ← AGREGAR ESTO */}
-    
-      {/* Contenido Principal */}
-      <main style={{
-        padding: '2rem',
-        maxWidth: '1200px',
-        margin: '0 auto',
-      }}></main>
+      <Header />  
 
-      {/* Contenido Principal */}
+      {user?.user_type === 'patient' && (
+        <button
+          onClick={() => setShowCreateAppointment(true)}
+          style={{
+            position: 'fixed',
+            bottom: '2rem',
+            right: '2rem',
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            backgroundColor: colors.accent,
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            zIndex: 1000,
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'scale(1.1)';
+            e.target.style.boxShadow = '0 6px 25px rgba(0,0,0,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'scale(1)';
+            e.target.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+          }}
+          title="Agendar nueva cita"
+        >
+          <Plus size={28} />
+        </button>
+      )}
+
+      {showCreateAppointment && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            position: 'relative'
+          }}>
+            <button
+              onClick={() => setShowCreateAppointment(false)}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                color: colors.lightText,
+                zIndex: 10
+              }}
+            >
+              ✕
+            </button>
+            <CreateAppointment
+              onAppointmentCreated={handleAppointmentCreated}
+              onCancel={() => setShowCreateAppointment(false)}
+            />
+          </div>
+        </div>
+      )}
+
       <main style={{
         padding: '2rem',
         maxWidth: '1200px',
         margin: '0 auto',
+        paddingBottom: '5rem'
       }}>
-        {/* Tarjeta de Bienvenida */}
         <div style={{
           backgroundColor: 'white',
           borderRadius: '16px',
@@ -129,46 +211,82 @@ const Dashboard = () => {
           <div style={{
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '1rem',
             marginBottom: '1rem'
           }}>
             <div style={{
-              width: '60px',
-              height: '60px',
-              backgroundColor: colors.secondary,
-              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: colors.accent,
-              fontSize: '24px'
+              gap: '1rem'
             }}>
-              {user?.user_type === 'professional' ? '👨‍⚕️' : '👤'}
-            </div>
-            <div>
-              <h2 style={{
-                fontSize: '1.75rem',
-                fontWeight: '700',
+              <div style={{
+                width: '60px',
+                height: '60px',
+                backgroundColor: colors.secondary,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 color: colors.accent,
-                margin: '0 0 0.25rem 0'
+                fontSize: '24px'
               }}>
-                ¡Bienvenido, {user?.first_name}!
-              </h2>
-              <p style={{
-                color: colors.lightText,
-                margin: 0,
-                fontSize: '1rem'
-              }}>
-                {user?.user_type === 'professional' 
-                  ? 'Gestiona tu consultorio y atiende a tus pacientes'
-                  : 'Cuida de tu salud con nuestros profesionales'
-                }
-              </p>
+                {user?.user_type === 'professional' ? '👨‍⚕️' : '👤'}
+              </div>
+              <div>
+                <h2 style={{
+                  fontSize: '1.75rem',
+                  fontWeight: '700',
+                  color: colors.accent,
+                  margin: '0 0 0.25rem 0'
+                }}>
+                  ¡Bienvenido, {user?.first_name}!
+                </h2>
+                <p style={{
+                  color: colors.lightText,
+                  margin: 0,
+                  fontSize: '1rem'
+                }}>
+                  {user?.user_type === 'professional' 
+                    ? 'Gestiona tu consultorio y atiende a tus pacientes'
+                    : 'Cuida de tu salud con nuestros profesionales'
+                  }
+                </p>
+              </div>
             </div>
+            
+            {user?.user_type === 'patient' && (
+              <button
+                onClick={() => setShowCreateAppointment(true)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: colors.accent,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#0a1e33';
+                  e.target.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = colors.accent;
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                <Plus size={18} />
+                Agendar Cita
+              </button>
+            )}
           </div>
         </div>
-
-        {/* Cards Rectangulares - NUEVO DISEÑO */}
 
         <div style={{
           display: 'grid',
@@ -216,7 +334,6 @@ const Dashboard = () => {
           })}
         </div>
 
-        {/* Sección de Estadísticas - SOLO PARA PROFESIONALES */}
         {user?.user_type === 'professional' && (
           <div style={{
             display: 'grid',
@@ -225,7 +342,6 @@ const Dashboard = () => {
             marginTop: '3rem'
           }}>
           
-          {/* Card de Ingresos Esperados - MEJOR ESPACIADO */}
           <div style={{
             backgroundColor: 'white',
             borderRadius: '16px',
@@ -264,8 +380,6 @@ const Dashboard = () => {
               </select>
             </div>
             
-            
-            {/* Gráfica con mejor espaciado */}
             <div style={{
               display: 'flex',
               alignItems: 'end',
@@ -326,7 +440,6 @@ const Dashboard = () => {
               ))}
             </div>
             
-            {/* Total y porcentaje */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -365,7 +478,7 @@ const Dashboard = () => {
           </div>
         </div>
         )}
-      {/* PARA PACIENTES: Mostrar recordatorios de citas */}
+
       {user?.user_type === 'patient' && (
         <div style={{
           display: 'grid',
@@ -374,42 +487,78 @@ const Dashboard = () => {
           marginTop: '3rem'
         }}>
           
-          {/* Card de Recordatorios de Citas */}
           <div style={{
             backgroundColor: 'white',
             borderRadius: '16px',
-            padding: '4rem',
+            padding: '2rem',
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            border: `1px solid ${colors.secondary}`
+            border: `1px solid ${colors.secondary}`,
+            position: 'relative'
           }}>
-            <h3 style={{
-              fontSize: '1.6rem',
-              fontWeight: '700',
-              color: colors.accent,
-              marginBottom: '0.5rem',
-              textAlign: 'center',  
-              width: '100%'         
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
             }}>
-              📅 Tienes ({pendingAppointments.length}) citas agendadas pendientes
-            </h3>
+              <h3 style={{
+                fontSize: '1.6rem',
+                fontWeight: '700',
+                color: colors.accent,
+                margin: 0
+              }}>
+                📅 Mis Citas ({pendingAppointments.length})
+              </h3>
+              
+              <button
+                onClick={() => setShowCreateAppointment(true)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: colors.accent,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Plus size={16} />
+                Nueva Cita
+              </button>
+            </div>
             
             {pendingAppointments.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '0.2rem' }}>
-                <p style={{ color: colors.lightText, marginBottom: '1rem' }}>
-                  No has agendado ninguna cita aún
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '2rem 1rem',
+                backgroundColor: '#f8fafc',
+                borderRadius: '8px',
+                border: `1px dashed ${colors.secondary}`
+              }}>
+                <p style={{ 
+                  color: colors.lightText, 
+                  marginBottom: '1rem',
+                  fontSize: '1rem'
+                }}>
+                  No tienes citas agendadas
                 </p>
                 <button
-                  onClick={() => navigate('/consultorios')}
+                  onClick={() => setShowCreateAppointment(true)}
                   style={{
                     padding: '0.75rem 1.5rem',
                     backgroundColor: colors.accent,
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    fontWeight: '600'
                   }}
                 >
-                  + Agendar Cita
+                  + Agendar mi primera cita
                 </button>
               </div>
             ) : (
@@ -425,7 +574,6 @@ const Dashboard = () => {
                       position: 'relative'
                     }}
                   >
-                    {/* Badge de Confirmado */}
                     {appointment.status === 'confirmed' && (
                       <div style={{
                         position: 'absolute',
@@ -544,11 +692,11 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-)}
+      )}
 
       </main>
 
-      <style jsx>{`
+      <style>{`
         @keyframes slideInRight {
           from {
             transform: translateX(100%);
@@ -556,6 +704,19 @@ const Dashboard = () => {
           to {
             transform: translateX(0);
           }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </>
