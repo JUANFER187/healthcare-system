@@ -5,11 +5,12 @@ import { useAuth } from '../context/AuthContext';
 const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
   const { user } = useAuth();
   
+  // ✅ CORREGIDO: Nombres de campos para Django
   const [formData, setFormData] = useState({
     professional: '',
     service: '',
-    date: '',
-    time: '',
+    appointment_date: '',      // ✅ Django espera "appointment_date"
+    appointment_time: '',      // ✅ Django espera "appointment_time"
     reason: '',
     notes: ''
   });
@@ -27,10 +28,10 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
   }, []);
 
   useEffect(() => {
-    if (formData.professional && formData.date) {
+    if (formData.professional && formData.appointment_date) {
       loadAvailableSlots();
     }
-  }, [formData.professional, formData.date]);
+  }, [formData.professional, formData.appointment_date]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -50,11 +51,11 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
   };
 
   const loadAvailableSlots = async () => {
-    if (!formData.professional || !formData.date) return;
+    if (!formData.professional || !formData.appointment_date) return;
     
     setLoadingSlots(true);
     try {
-      const slots = await appointmentService.getAvailableSlots(formData.professional, formData.date);
+      const slots = await appointmentService.getAvailableSlots(formData.professional, formData.appointment_date);
       setAvailableSlots(slots);
     } catch (error) {
       console.warn('Using generated time slots:', error);
@@ -93,10 +94,10 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
       }));
     }
     
-    if (name === 'date' || name === 'professional') {
+    if (name === 'appointment_date' || name === 'professional') {
       setFormData(prev => ({
         ...prev,
-        time: ''
+        appointment_time: ''
       }));
       setAvailableSlots([]);
     }
@@ -107,11 +108,12 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
     setErrors({});
     setSuccess('');
 
+    // ✅ CORREGIDO: Validaciones con nombres correctos
     const newErrors = {};
     if (!formData.professional) newErrors.professional = 'Selecciona un profesional';
     if (!formData.service) newErrors.service = 'Selecciona un servicio';
-    if (!formData.date) newErrors.date = 'Selecciona una fecha';
-    if (!formData.time) newErrors.time = 'Selecciona un horario';
+    if (!formData.appointment_date) newErrors.appointment_date = 'Selecciona una fecha';
+    if (!formData.appointment_time) newErrors.appointment_time = 'Selecciona un horario';
     if (!formData.reason) newErrors.reason = 'Indica el motivo de la consulta';
 
     if (Object.keys(newErrors).length > 0) {
@@ -121,6 +123,7 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
 
     setLoading(true);
     try {
+      // Convertir a números
       const professionalId = parseInt(formData.professional, 10);
       const serviceId = parseInt(formData.service, 10);
       
@@ -128,7 +131,8 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
         throw new Error('IDs de profesional o servicio inválidos');
       }
 
-      let formattedTime = formData.time.trim();
+      // ✅ CORREGIDO: Formatear tiempo para Django
+      let formattedTime = formData.appointment_time.trim();
       const timeParts = formattedTime.split(':');
       
       if (timeParts.length === 2) {
@@ -144,11 +148,12 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
         formattedTime = '09:00:00';
       }
 
+      // ✅ CORREGIDO: Datos con nombres que Django espera
       const appointmentData = {
         professional: professionalId,
         service: serviceId,
-        date: formData.date,
-        time: formattedTime,
+        appointment_date: formData.appointment_date,  // ✅ Nombre correcto
+        appointment_time: formattedTime,              // ✅ Nombre correcto
         reason: formData.reason,
         notes: formData.notes || '',
         status: 'scheduled'
@@ -160,11 +165,12 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
       
       setSuccess('¡Cita agendada exitosamente! 📅');
       
+      // Limpiar formulario
       setFormData({
         professional: '',
         service: '',
-        date: '',
-        time: '',
+        appointment_date: '',
+        appointment_time: '',
         reason: '',
         notes: ''
       });
@@ -415,7 +421,8 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
-              <label htmlFor="date" style={{
+              {/* ✅ CORREGIDO: appointment_date en lugar de date */}
+              <label htmlFor="appointment_date" style={{
                 display: 'block',
                 fontSize: '0.875rem',
                 fontWeight: '500',
@@ -426,9 +433,9 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
               </label>
               <input
                 type="date"
-                id="date"
-                name="date"
-                value={formData.date}
+                id="appointment_date"
+                name="appointment_date"
+                value={formData.appointment_date}
                 onChange={handleChange}
                 min={getTomorrowDate()}
                 max={getMaxDate()}
@@ -436,25 +443,26 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
                 style={{
                   width: '100%',
                   padding: '0.75rem',
-                  border: `1px solid ${errors.date ? '#fca5a5' : '#d1d5db'}`,
+                  border: `1px solid ${errors.appointment_date ? '#fca5a5' : '#d1d5db'}`,
                   borderRadius: '0.5rem',
                   fontSize: '0.875rem',
                   boxSizing: 'border-box'
                 }}
               />
-              {errors.date && (
+              {errors.appointment_date && (
                 <p style={{
                   color: '#dc2626',
                   fontSize: '0.75rem',
                   margin: '0.25rem 0 0 0'
                 }}>
-                  ⚠️ {errors.date}
+                  ⚠️ {errors.appointment_date}
                 </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="time" style={{
+              {/* ✅ CORREGIDO: appointment_time en lugar de time */}
+              <label htmlFor="appointment_time" style={{
                 display: 'block',
                 fontSize: '0.875rem',
                 fontWeight: '500',
@@ -464,26 +472,26 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
                 ⏰ Hora *
               </label>
               <select
-                id="time"
-                name="time"
-                value={formData.time}
+                id="appointment_time"
+                name="appointment_time"
+                value={formData.appointment_time}
                 onChange={handleChange}
-                disabled={!formData.professional || !formData.date || loadingSlots}
+                disabled={!formData.professional || !formData.appointment_date || loadingSlots}
                 required
                 style={{
                   width: '100%',
                   padding: '0.75rem',
-                  border: `1px solid ${errors.time ? '#fca5a5' : '#d1d5db'}`,
+                  border: `1px solid ${errors.appointment_time ? '#fca5a5' : '#d1d5db'}`,
                   borderRadius: '0.5rem',
                   fontSize: '0.875rem',
-                  backgroundColor: !formData.professional || !formData.date || loadingSlots ? '#f9fafb' : 'white',
+                  backgroundColor: !formData.professional || !formData.appointment_date || loadingSlots ? '#f9fafb' : 'white',
                   boxSizing: 'border-box'
                 }}
               >
                 <option value="">
                   {loadingSlots ? 'Cargando horarios...' : 
                    !formData.professional ? 'Selecciona profesional' :
-                   !formData.date ? 'Selecciona fecha' : 
+                   !formData.appointment_date ? 'Selecciona fecha' : 
                    'Selecciona un horario'}
                 </option>
                 {availableSlots.map(slot => (
@@ -492,13 +500,13 @@ const CreateAppointment = ({ onAppointmentCreated, onCancel }) => {
                   </option>
                 ))}
               </select>
-              {errors.time && (
+              {errors.appointment_time && (
                 <p style={{
                   color: '#dc2626',
                   fontSize: '0.75rem',
                   margin: '0.25rem 0 0 0'
                 }}>
-                  ⚠️ {errors.time}
+                  ⚠️ {errors.appointment_time}
                 </p>
               )}
             </div>
