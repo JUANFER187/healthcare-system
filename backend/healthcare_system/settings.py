@@ -42,6 +42,12 @@ INSTALLED_APPS = [
     "reviews",
 ]
 
+# Headers expuestos en la response
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'authorization',
+]
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
