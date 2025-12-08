@@ -9,11 +9,17 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 10000, // 10 segundos timeout
+  withCredentials: true,
 });
 
 // Interceptor para agregar token a las requests
 api.interceptors.request.use(
   (config) => {
+    // Headers para CORS
+    config.headers['Access-Control-Allow-Origin'] = '*';
+    config.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+    config.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+    
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

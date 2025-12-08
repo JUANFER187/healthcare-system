@@ -1,6 +1,36 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
+
+# ==================== SERIALIZERS BÁSICOS ====================
+
+class UserSerializer(serializers.ModelSerializer):
+    """Serializer básico para el modelo User (para vistas generales)"""
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 
+            'user_type', 'phone', 'specialty', 'license_number',
+            'clinic_name', 'clinic_address', 'date_of_birth',
+            'is_active', 'date_joined'
+        ]
+        read_only_fields = ['id', 'email', 'date_joined', 'is_active']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer para perfil de usuario (solo lectura)"""
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'user_type',
+            'specialty', 'license_number', 'clinic_name', 'clinic_address',
+            'phone', 'date_of_birth', 'date_joined'
+        ]
+        read_only_fields = ['id', 'email', 'date_joined']
+
+# ==================== SERIALIZERS PARA AUTENTICACIÓN ====================
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -61,12 +91,15 @@ class UserLoginSerializer(serializers.Serializer):
         else:
             raise serializers.ValidationError('Email y contraseña requeridos')
 
-class UserProfileSerializer(serializers.ModelSerializer):
+# ==================== SERIALIZERS PARA ACTUALIZACIÓN ====================
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """Serializer para actualizar datos del usuario"""
+    
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name', 'user_type',
+            'first_name', 'last_name', 'phone',
             'specialty', 'license_number', 'clinic_name', 'clinic_address',
-            'phone', 'date_of_birth', 'date_joined'
+            'date_of_birth'
         ]
-        read_only_fields = ['id', 'email', 'date_joined']

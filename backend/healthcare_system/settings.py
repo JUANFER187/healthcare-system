@@ -3,22 +3,16 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config
 
-# Configuración de base de datos para Docker
-DATABASE_CONFIG = {
-    'ENGINE': 'django.db.backends.postgresql',
-    'NAME': os.environ.get('DB_NAME', 'healthcare_db'),
-    'USER': os.environ.get('DB_USER', 'healthcare_user'),
-    'PASSWORD': os.environ.get('DB_PASSWORD', 'healthcare_password'),
-    'HOST': os.environ.get('DB_HOST', 'localhost'),
-    'PORT': os.environ.get('DB_PORT', '5432'),
-}
-
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='clave-secreta-temporal')
-DEBUG = config('DEBUG', default=False, cast=bool)
+# Quick-start development settings - unsuitable for production
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-clave-temporal-para-desarrollo')
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'backend', 'frontend']
+
+# ==================== APPLICATION DEFINITION ====================
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -28,29 +22,20 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Third party
+    # Third party apps
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
     
-    # Custom apps
+    # Local apps
     'users',
     'appointments',
-    'clinic_history',
-    'clinical_history',
-    'webhooks',
-    "reviews",
-]
-
-# Headers expuestos en la response
-CORS_EXPOSE_HEADERS = [
-    'content-type',
-    'authorization',
+    'reviews',
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -61,7 +46,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'healthcare_system.urls'
 
-# ✅ AGREGAR ESTA SECCIÓN TEMPLATES QUE FALTABA
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -80,16 +64,41 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'healthcare_system.wsgi.application'
 
+# ==================== DATABASE CONFIGURATION ====================
+
 DATABASES = {
-    'default': DATABASE_CONFIG
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'healthcare_db'),
+        'USER': os.environ.get('DB_USER', 'healthcare_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'healthcare_password'),
+        'HOST': os.environ.get('DB_HOST', 'db'),  # ✅ 'db' es el nombre del servicio en docker-compose
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        'CONN_MAX_AGE': 600,
+        'OPTIONS': {
+            'connect_timeout': 10,
+        }
+    }
 }
 
+# ==================== PASSWORD VALIDATION ====================
+
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
+
+# ==================== INTERNATIONALIZATION ====================
 
 LANGUAGE_CODE = 'es-es'
 TIME_ZONE = 'America/Mexico_City'
@@ -99,10 +108,12 @@ USE_TZ = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Custom User Model
+# ==================== CUSTOM USER MODEL ====================
+
 AUTH_USER_MODEL = 'users.User'
 
-# REST Framework
+# ==================== REST FRAMEWORK CONFIG ====================
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -110,44 +121,99 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
 }
 
-# JWT
+# ==================== SIMPLE JWT CONFIG ====================
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'UPDATE_LAST_LOGIN': False,
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# CORS settings - AGREGAR ESTO COMPLETO
-CORS_ALLOW_ALL_ORIGINS = True  # Para desarrollo, en producción especificar origins
+# ==================== CORS CONFIGURATION AGGRESIVA ====================
+
+# Desactivar django-cors-headers y usar nuestro middleware
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3000", 
-    "http://127.0.0.1:3001",
-    "http://frontend:3000",
+# Configuración EXTREMA para desarrollo
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost:\d+$",
+    r"^http://127.0.0.1:\d+$",
 ]
 
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
+CORS_ALLOW_METHODS = ['*']  # Permitir todos
+CORS_ALLOW_HEADERS = ['*']  # Permitir todos
+
+# Middleware - USAR NUESTRO PROPIO
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    
+    # NUESTRO MIDDLEWARE MANUAL
+    'healthcare_system.cors_fix.CorsFixMiddleware',
+    
+    # O el permisivo:
+    # 'healthcare_system.cors_fix.DevelopmentCorsMiddleware',
+    
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
+# Headers adicionales para cookies/sessions
+CORS_ALLOW_CREDENTIALS = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  # Para que JavaScript pueda leerlo si es necesario
+
+# ==================== SECURITY ====================
+
+# Solo para desarrollo
+if DEBUG:
+    # Desactivar algunas protecciones para facilitar desarrollo
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False
+    SECURE_BROWSER_XSS_FILTER = False
+    SECURE_CONTENT_TYPE_NOSNIFF = False
+    X_FRAME_OPTIONS = 'SAMEORIGIN'

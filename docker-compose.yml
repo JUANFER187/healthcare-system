@@ -1,9 +1,17 @@
-version: '3.8'
+
+networks:
+  healthcare-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  n8n_data:
 
 services:
-  # Base de datos PostgreSQL
+  # ==================== BASE DE DATOS ====================
   db:
     image: postgres:13
+    container_name: healthcare-db
     environment:
       POSTGRES_DB: healthcare_db
       POSTGRES_USER: healthcare_user
@@ -12,66 +20,82 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U healthcare_user -d healthcare_db"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Backend Django
+  # ==================== BACKEND DJANGO ====================
   backend:
     build: ./backend
+    container_name: healthcare-backend
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=False
+      - DEBUG=1
       - DB_NAME=healthcare_db
       - DB_USER=healthcare_user
       - DB_PASSWORD=healthcare_password
       - DB_HOST=db
       - DB_PORT=5432
-      - SECRET_KEY=docker-secret-key-change-in-production
+      - SECRET_KEY=django-insecure-dev-key-change-in-production
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - ./backend/requirements.txt:/app/requirements.txt
     command: >
-      sh -c "python manage.py migrate &&
+      sh -c "sleep 5 &&
+             python manage.py migrate &&
+             echo 'Migraciones aplicadas' &&
              python manage.py runserver 0.0.0.0:8000"
+    networks:
+      - healthcare-network
 
-  # Frontend React
+  # ==================== FRONTEND REACT ====================
   frontend:
     build: ./frontend
+    container_name: healthcare-frontend
     ports:
       - "3000:3000"
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - VITE_API_URL=http://localhost:8000/api
     volumes:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
       - backend
+    networks:
+      - healthcare-network
 
-  # n8n para automatización
+  # ==================== n8n PARA AUTOMATIZACIÓN ====================
   n8n:
     image: n8nio/n8n
+    container_name: healthcare-n8n
     ports:
       - "5678:5678"
     environment:
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=tu_password_seguro
-      - TWILIO_ACCOUNT_SID=tu_sid_aqui
-      - TWILIO_AUTH_TOKEN=tu_token_aqui
-      - FRONTEND_URL=http://localhost:3000
-      - BACKEND_URL=http://backend:8000
+      - N8N_BASIC_AUTH_PASSWORD=admin123
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
     volumes:
       - n8n_data:/home/node/.n8n
+    networks:
+      - healthcare-network
 
-  # n8n-mcp para IA
+  # ==================== n8n-mcp PARA IA ====================
   n8n-mcp:
     build: ./n8n-mcp
+    container_name: healthcare-n8n-mcp
     ports:
       - "3002:3002"
     environment:
@@ -79,7 +103,19 @@ services:
       - N8N_API_KEY=test-key
     depends_on:
       - n8n
+    networks:
+      - healthcare-network
 
-volumes:
-  postgres_data:
-  n8n_data:
+  # ==================== NGINX (OPCIONAL - COMENTADO) ====================
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: healthcare-nginx
+  #   ports:
+  #     - "8080:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf
+  #   depends_on:
+  #     - backend
+  #     - frontend
+  #   networks:
+  #     - healthcare-network
