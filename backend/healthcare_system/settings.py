@@ -166,20 +166,40 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# ==================== CORS CONFIGURATION AGGRESIVA ====================
-
-# Desactivar django-cors-headers y usar nuestro middleware
-CORS_ALLOW_ALL_ORIGINS = True
+# ==================== CORS CONFIGURATION ====================
+CORS_ALLOW_ALL_ORIGINS = True  # Permitir todos los orígenes en desarrollo
 CORS_ALLOW_CREDENTIALS = True
-
-# Configuración EXTREMA para desarrollo
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^http://localhost:\d+$",
-    r"^http://127.0.0.1:\d+$",
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]
 
-CORS_ALLOW_METHODS = ['*']  # Permitir todos
-CORS_ALLOW_HEADERS = ['*']  # Permitir todos
+# Configuración de CSRF para desarrollo
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+
+# Cookies
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
 
 # Middleware - USAR NUESTRO PROPIO
 MIDDLEWARE = [
@@ -198,13 +218,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-# Headers adicionales para cookies/sessions
-CORS_ALLOW_CREDENTIALS = True
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_HTTPONLY = False  # Para que JavaScript pueda leerlo si es necesario
 
 # ==================== SECURITY ====================
 
