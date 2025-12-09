@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-clave-temporal-para-desarrollo')
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['*']  # Para desarrollo, en producción especificar hosts
+ALLOWED_HOSTS = ['*']  # Permitir todos en desarrollo
 
 # ==================== APPLICATION DEFINITION ====================
 
@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework',
     'rest_framework_simplejwt',
-    'corsheaders',  # ¡DEBE ESTAR INSTALADO!
+    # NOTA: Quitamos corsheaders, usaremos nuestro middleware
     
     # Local apps
     'users',
@@ -35,7 +35,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # ¡DEBE IR JUSTO DESPUÉS DE SecurityMiddleware!
+    'healthcare_system.middleware.CorsMiddleware',  # NUESTRO MIDDLEWARE MANUAL
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -166,59 +166,20 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# ==================== CORS CONFIGURATION DEFINITIVA ====================
-# ¡CONFIGURACIÓN QUE SÍ FUNCIONA!
+# ==================== CORS MANUAL (quitamos corsheaders) ====================
+# No necesitamos configuración aquí, nuestro middleware lo maneja
 
-CORS_ALLOW_ALL_ORIGINS = True  # Permitir todos en desarrollo
-
-# O si quieres ser más específico:
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
-
-CORS_ALLOW_CREDENTIALS = True
-
-# Headers permitidos
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
-
-# Métodos permitidos
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-
-# Exponer headers
-CORS_EXPOSE_HEADERS = [
-    'Content-Type',
-    'X-CSRFToken',
-]
-
-# Configuración de CSRF
+# Configuración de CSRF para desarrollo
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
 
 # Cookies
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'None' if DEBUG else 'Lax'
+CSRF_COOKIE_SAMESITE = 'None' if DEBUG else 'Lax'
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 
@@ -232,4 +193,3 @@ if DEBUG:
     SECURE_BROWSER_XSS_FILTER = False
     SECURE_CONTENT_TYPE_NOSNIFF = False
     X_FRAME_OPTIONS = 'SAMEORIGIN'
-    CORS_ALLOW_ALL_ORIGINS = True  # Asegurar que esté True en desarrollo
