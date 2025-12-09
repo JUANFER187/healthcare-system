@@ -96,14 +96,37 @@ api.interceptors.response.use(
 // ==================== SERVICIOS DE AUTENTICACIÓN ====================
 export const authService = {
   // ✅ MÉTODO PRINCIPAL: Login inteligente que prueba múltiples endpoints
+  // ✅ MÉTODO PRINCIPAL CORREGIDO: Login con compatibilidad total
   login: async (username, password) => {
     console.log('🔐 Iniciando proceso de login...');
+    console.log('📧 Usuario recibido:', username);
     
     // Lista de endpoints a probar (en orden de preferencia)
     const endpoints = [
-      { url: '/auth/login/', method: 'POST', name: 'Login personalizado' },
-      { url: '/auth/token/', method: 'POST', name: 'Simple JWT estándar' },
-      { url: '/token/', method: 'POST', name: 'Simple JWT (sin /auth/)' },
+      { 
+        url: '/auth/login/', 
+        method: 'POST', 
+        name: 'Login de compatibilidad',
+        data: { username, password }  // Usar username como está
+      },
+      { 
+        url: '/auth/token/', 
+        method: 'POST', 
+        name: 'Endpoint legacy',
+        data: { username, password }
+      },
+      { 
+        url: '/login/', 
+        method: 'POST', 
+        name: 'Endpoint nuevo con email',
+        data: { email: username, password }  // Probar como email
+      },
+      { 
+        url: '/login/', 
+        method: 'POST', 
+        name: 'Endpoint nuevo con username',
+        data: { username, password }  // Probar como username
+      },
     ];
     
     for (const endpoint of endpoints) {
@@ -112,83 +135,92 @@ export const authService = {
         
         const response = await axios.post(
           `${API_BASE_URL}${endpoint.url}`,
-          { username, password },
-          { headers: { 'Content-Type': 'application/json' }, timeout: 8000 }
+          endpoint.data,
+          { 
+            headers: { 'Content-Type': 'application/json' }, 
+            timeout: 5000 
+          }
         );
         
         console.log(`✅ ${endpoint.name} funcionó:`, response.status);
         console.log('📦 Datos recibidos:', response.data);
         
-        // Procesar respuesta según el formato
+        // Procesar respuesta - FORMATO ESPERADO:
+        // { user: {...}, refresh: "...", access: "..." }
         let accessToken = null;
         let refreshToken = null;
         let userData = null;
         
-        // Formato 1: Simple JWT estándar (access/refresh)
-        if (response.data.access && response.data.refresh) {
+        // Formato nuevo (nuestro backend)
+        if (response.data.access && response.data.refresh && response.data.user) {
           accessToken = response.data.access;
           refreshToken = response.data.refresh;
-          userData = response.data.user || { username, user_type: 'patient' };
+          userData = response.data.user;
         }
-        // Formato 2: Token personalizado
+        // Formato alternativo
         else if (response.data.token) {
           accessToken = response.data.token;
-          userData = response.data.user || response.data;
+          userData = response.data.user || { username, email: username };
         }
-        // Formato 3: Solo user data
-        else if (response.data.user) {
-          userData = response.data.user;
-          accessToken = response.data.access || response.data.token;
+        // Formato simple JWT estándar
+        else if (response.data.access && response.data.refresh) {
+          accessToken = response.data.access;
           refreshToken = response.data.refresh;
-        }
-        // Formato 4: Respuesta directa del user_login_view
-        else {
-          userData = response.data;
-          accessToken = response.data.access_token || response.data.token;
-        }
-        
-        // Si no tenemos userData completo, obtenerlo del endpoint /users/me/
-        if (accessToken && (!userData || !userData.id)) {
+          // Intentar obtener info del usuario
           try {
-            // Configurar token temporalmente
-            const tempApi = axios.create({
-              baseURL: API_BASE_URL,
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-              }
+            const userResponse = await axios.get(`${API_BASE_URL}/me/`, {
+              headers: { 'Authorization': `Bearer ${accessToken}` }
             });
-            
-            const userResponse = await tempApi.get('/users/me/');
             userData = userResponse.data;
-            console.log('✅ Perfil obtenido de /users/me/:', userData);
-          } catch (profileError) {
-            console.warn('⚠️ No se pudo obtener perfil completo:', profileError.message);
-            // Crear user básico si no existe
-            if (!userData) {
-              userData = {
-                username: username,
-                email: `${username}@example.com`,
-                user_type: 'patient'
-              };
-            }
+          } catch (e) {
+            userData = { 
+              username: username,
+              email: username.includes('@') ? username : `${username}@example.com`,
+              user_type: 'patient' 
+            };
           }
         }
+        // Si solo tenemos access token
+        else if (response.data.access) {
+          accessToken = response.data.access;
+          userData = response.data.user || { username, email: username };
+        }
+        
+        // Validar que tenemos token
+        if (!accessToken) {
+          console.warn('⚠️ No se recibió token de acceso');
+          continue;
+        }
+        
+        // Si no tenemos userData, crear uno básico
+        if (!userData) {
+          userData = {
+            username: username,
+            email: username.includes('@') ? username : `${username}@test.com`,
+            user_type: 'patient',
+            first_name: username.split('@')[0],
+            last_name: 'Usuario'
+          };
+        }
+        
+        // Asegurar que userData tenga los campos necesarios
+        if (!userData.email) userData.email = username.includes('@') ? username : `${username}@test.com`;
+        if (!userData.username) userData.username = username;
+        if (!userData.user_type) userData.user_type = 'patient';
         
         // Guardar en localStorage
         localStorage.setItem('access_token', accessToken);
         if (refreshToken) {
           localStorage.setItem('refresh_token', refreshToken);
         }
-        if (userData) {
-          localStorage.setItem('user', JSON.stringify(userData));
-          localStorage.setItem('user_type', userData.user_type || 'patient');
-        }
+        
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('user_type', userData.user_type || 'patient');
         
         // Configurar axios para futuras requests
         api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
         
-        console.log('🎉 Login exitoso. Usuario:', userData);
+        console.log('🎉 Login exitoso. Usuario guardado:', userData);
         return {
           success: true,
           user: userData,
@@ -198,6 +230,9 @@ export const authService = {
         
       } catch (error) {
         console.log(`❌ ${endpoint.name} falló:`, error.response?.status || error.message);
+        if (error.response?.data) {
+          console.log('📝 Error details:', error.response.data);
+        }
         // Continuar con el siguiente endpoint
         continue;
       }
@@ -205,7 +240,7 @@ export const authService = {
     
     // Si todos los endpoints fallaron
     console.error('❌ Todos los endpoints de login fallaron');
-    throw new Error('No se pudo conectar con el servidor de autenticación. Verifica que el backend esté corriendo.');
+    throw new Error('Credenciales inválidas o servidor no disponible');
   },
 
   // ✅ Refresh token
