@@ -3,35 +3,77 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import User
 from .serializers import (
     UserRegistrationSerializer,
-    UserLoginSerializer,
     UserProfileSerializer,
     UserSerializer
 )
 
-# ==================== VISTAS DE AUTENTICACIÓN ====================
+# ==================== SERIALIZER PERSONALIZADO PARA JWT ====================
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def user_login_view(request):
-    """Vista para login de usuarios"""
-    serializer = UserLoginSerializer(data=request.data)
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Serializer personalizado que usa email en lugar de username"""
+    username_field = 'email'  # Cambiar de 'username' a 'email'
     
-    if serializer.is_valid():
-        user = serializer.validated_data['user']
-        refresh = RefreshToken.for_user(user)
+    def validate(self, attrs):
+        # Extraer email y password
+        email = attrs.get("email")
+        password = attrs.get("password")
         
-        return Response({
-            'user': UserProfileSerializer(user).data,
+        if not email or not password:
+            raise serializers.ValidationError(
+                {"error": "Debe proporcionar email y contraseña"},
+                code='authorization'
+            )
+        
+        # Autenticar usando email
+        user = authenticate(
+            request=self.context.get('request'),
+            username=email,  # Usar email como username
+            password=password
+        )
+        
+        if user is None:
+            raise serializers.ValidationError(
+                {"error": "Credenciales inválidas"},
+                code='authorization'
+            )
+        
+        if not user.is_active:
+            raise serializers.ValidationError(
+                {"error": "Usuario inactivo"},
+                code='authorization'
+            )
+        
+        # Generar token
+        refresh = self.get_token(user)
+        
+        data = {
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'user_type': user.user_type
+            },
             'refresh': str(refresh),
             'access': str(refresh.access_token),
-        }, status=status.HTTP_200_OK)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        }
+        
+        return data
+
+# ==================== VISTA PERSONALIZADA PARA JWT ====================
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Vista personalizada que usa email para login"""
+    serializer_class = CustomTokenObtainPairSerializer
+
+# ==================== VISTAS DE AUTENTICACIÓN ====================
 
 class UserRegistrationView(generics.CreateAPIView):
     """Vista para registro de nuevos usuarios"""
@@ -47,7 +89,13 @@ class UserRegistrationView(generics.CreateAPIView):
         refresh = RefreshToken.for_user(user)
         
         return Response({
-            'user': UserProfileSerializer(user).data,
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'user_type': user.user_type
+            },
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         }, status=status.HTTP_201_CREATED)
@@ -61,11 +109,18 @@ class UserProfileView(APIView):
     def get(self, request):
         try:
             user = request.user
-            serializer = UserProfileSerializer(user)
-            return Response(serializer.data)
-        except User.DoesNotExist:
+            return Response({
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'user_type': user.user_type,
+                'is_active': user.is_active,
+                'date_joined': user.date_joined
+            })
+        except Exception as e:
             return Response(
-                {'error': 'Usuario no encontrado'},
+                {'error': str(e)},
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -84,19 +139,11 @@ def professionals_list_view(request):
                 'first_name': prof.first_name,
                 'last_name': prof.last_name,
                 'email': prof.email,
-                'specialty': prof.specialty,
-                'license_number': prof.license_number,
-                'phone_number': prof.phone,
+                'specialty': prof.specialty if hasattr(prof, 'specialty') else 'General',
+                'license_number': prof.license_number if hasattr(prof, 'license_number') else '',
+                'phone_number': prof.phone if hasattr(prof, 'phone') else '',
                 'user_type': prof.user_type
             })
         return Response(data)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-class ProfessionalListView(generics.ListAPIView):
-    """Vista para listar profesionales (APIView style)"""
-    serializer_class = UserProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_queryset(self):
-        return User.objects.filter(user_type='professional', is_active=True)

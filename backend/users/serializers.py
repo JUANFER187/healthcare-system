@@ -1,105 +1,43 @@
 from rest_framework import serializers
-from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.password_validation import validate_password
 from .models import User
 
-# ==================== SERIALIZERS BÁSICOS ====================
-
-class UserSerializer(serializers.ModelSerializer):
-    """Serializer básico para el modelo User (para vistas generales)"""
-    
-    class Meta:
-        model = User
-        fields = [
-            'id', 'email', 'first_name', 'last_name', 
-            'user_type', 'phone', 'specialty', 'license_number',
-            'clinic_name', 'clinic_address', 'date_of_birth',
-            'is_active', 'date_joined'
-        ]
-        read_only_fields = ['id', 'email', 'date_joined', 'is_active']
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    """Serializer para perfil de usuario (solo lectura)"""
-    
-    class Meta:
-        model = User
-        fields = [
-            'id', 'email', 'first_name', 'last_name', 'user_type',
-            'specialty', 'license_number', 'clinic_name', 'clinic_address',
-            'phone', 'date_of_birth', 'date_joined'
-        ]
-        read_only_fields = ['id', 'email', 'date_joined']
-
-# ==================== SERIALIZERS PARA AUTENTICACIÓN ====================
-
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
-    password_confirmation = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password2 = serializers.CharField(write_only=True, required=True)
     
     class Meta:
         model = User
-        fields = [
-            'id', 'email', 'first_name', 'last_name', 'user_type',
-            'specialty', 'license_number', 'clinic_name', 'clinic_address',
-            'phone', 'date_of_birth',
-            'password', 'password_confirmation'
-        ]
+        fields = ['email', 'first_name', 'last_name', 'user_type', 'password', 'password2']
         extra_kwargs = {
-            'specialty': {'required': False},
-            'license_number': {'required': False},
-            'clinic_name': {'required': False},
-            'clinic_address': {'required': False},
-            'phone': {'required': False},
-            'date_of_birth': {'required': False},
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+            'user_type': {'required': True}
         }
     
     def validate(self, attrs):
-        if attrs['password'] != attrs.pop('password_confirmation'):
-            raise serializers.ValidationError("Las contraseñas no coinciden")
-        
-        user_type = attrs.get('user_type')
-        if user_type == 'professional':
-            if not attrs.get('specialty'):
-                raise serializers.ValidationError("Los profesionales deben tener una especialidad")
-            if not attrs.get('license_number'):
-                raise serializers.ValidationError("Los profesionales deben tener un número de licencia")
-        
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password": "Las contraseñas no coinciden"})
         return attrs
     
     def create(self, validated_data):
-        password = validated_data.pop('password')
-        user = User.objects.create_user(password=password, **validated_data)
+        validated_data.pop('password2')
+        user = User.objects.create_user(
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            user_type=validated_data['user_type']
+        )
         return user
 
-class UserLoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-    
-    def validate(self, attrs):
-        email = attrs.get('email')
-        password = attrs.get('password')
-        
-        if email and password:
-            user = authenticate(username=email, password=password)
-            if not user:
-                raise serializers.ValidationError('Credenciales inválidas')
-            if not user.is_active:
-                raise serializers.ValidationError('Cuenta desactivada')
-            
-            attrs['user'] = user
-            return attrs
-        else:
-            raise serializers.ValidationError('Email y contraseña requeridos')
-
-# ==================== SERIALIZERS PARA ACTUALIZACIÓN ====================
-
-class UserUpdateSerializer(serializers.ModelSerializer):
-    """Serializer para actualizar datos del usuario"""
-    
+class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = [
-            'first_name', 'last_name', 'phone',
-            'specialty', 'license_number', 'clinic_name', 'clinic_address',
-            'date_of_birth'
-        ]
+        fields = ['id', 'email', 'first_name', 'last_name', 'user_type', 'is_active', 'date_joined']
+        read_only_fields = ['id', 'email', 'date_joined']
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name', 'user_type']
