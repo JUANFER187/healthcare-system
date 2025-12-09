@@ -465,69 +465,93 @@ export const appointmentService = {
   // ✅ CORREGIDO: Crear nueva cita
   createAppointment: async (appointmentData) => {
     try {
-      console.log('📅 Creando nueva cita:', appointmentData);
+      console.log('📅 Iniciando creación de cita:', appointmentData);
       
-      // Formatear datos para Django
-      const formattedData = {
-        professional: appointmentData.professional,
-        service: appointmentData.service,
-        appointment_date: appointmentData.appointment_date,
-        appointment_time: appointmentData.appointment_time,
-        reason: appointmentData.reason || '',
-        notes: appointmentData.notes || '',
-        status: appointmentData.status || 'scheduled'
+      // Validar datos requeridos
+      const required = {
+        professional: 'Profesional',
+        service: 'Servicio', 
+        appointment_date: 'Fecha',
+        appointment_time: 'Hora'
       };
       
-      console.log('📤 Enviando datos formateados:', formattedData);
+      const missing = [];
+      for (const [field, name] of Object.entries(required)) {
+        if (!appointmentData[field]) {
+          missing.push(name);
+        }
+      }
       
-      const response = await api.post('/appointments/', formattedData);
+      if (missing.length > 0) {
+        throw new Error(`Faltan campos: ${missing.join(', ')}`);
+      }
+      
+      // Verificar que el usuario sea paciente
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      const user = JSON.parse(userStr);
+      if (user.user_type !== 'patient') {
+        throw new Error('Solo los pacientes pueden crear citas');
+      }
+      
+      // Preparar datos EXACTAMENTE como los espera el backend
+      const payload = {
+        professional: parseInt(appointmentData.professional),
+        service: parseInt(appointmentData.service),
+        appointment_date: appointmentData.appointment_date,
+        appointment_time: typeof appointmentData.appointment_time === 'string' 
+          ? appointmentData.appointment_time 
+          : `${appointmentData.appointment_time}:00`,
+        notes: appointmentData.notes || ''
+      };
+      
+      console.log('📤 Payload a enviar:', payload);
+      
+      // Enviar petición
+      const response = await api.post('/appointments/', payload);
+      
       console.log('✅ Cita creada exitosamente:', response.data);
-      return response.data;
+      return {
+        success: true,
+        data: response.data,
+        message: 'Cita creada exitosamente'
+      };
+      
     } catch (error) {
-      console.error('❌ Error creando cita:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
+      console.error('❌ Error en createAppointment:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
       });
-      throw error;
-    }
-  },
-
-  // Actualizar cita
-  updateAppointment: async (id, updates) => {
-    try {
-      const response = await api.patch(`/appointments/${id}/`, updates);
-      return response.data;
-    } catch (error) {
-      console.error(`Error actualizando cita ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Eliminar cita
-  deleteAppointment: async (id) => {
-    try {
-      const response = await api.delete(`/appointments/${id}/`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error eliminando cita ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Obtener servicios disponibles
-  getServices: async () => {
-    try {
-      const response = await api.get('/appointments/services/');
-      return response.data;
-    } catch (error) {
-      console.warn('⚠️ Usando datos de servicios de respaldo');
-      return [
-        { id: 1, name: 'Consulta General', duration: 30, price: 50 },
-        { id: 2, name: 'Control de Rutina', duration: 20, price: 30 },
-        { id: 3, name: 'Especialidad', duration: 45, price: 80 },
-        { id: 4, name: 'Urgencia', duration: 60, price: 100 }
-      ];
+      
+      let userMessage = 'Error creando cita';
+      
+      if (error.response?.data) {
+        const errors = error.response.data;
+        
+        if (typeof errors === 'object') {
+          const errorList = [];
+          for (const [field, messages] of Object.entries(errors)) {
+            if (Array.isArray(messages)) {
+              errorList.push(`${field}: ${messages.join(', ')}`);
+            } else {
+              errorList.push(`${field}: ${messages}`);
+            }
+          }
+          userMessage = errorList.join('; ');
+        } else if (typeof errors === 'string') {
+          userMessage = errors;
+        }
+      } else if (error.request) {
+        userMessage = 'No hay conexión con el servidor. Verifica que el backend esté corriendo.';
+      } else {
+        userMessage = error.message;
+      }
+      
+      throw new Error(userMessage);
     }
   },
 

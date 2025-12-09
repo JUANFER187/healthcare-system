@@ -6,6 +6,9 @@ from django.utils import timezone
 from datetime import datetime
 from .models import Appointment, Service
 from .serializers import AppointmentSerializer, AppointmentCreateSerializer, ServiceSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ServiceListView(generics.ListAPIView):
     queryset = Service.objects.all()
@@ -17,7 +20,6 @@ class AppointmentListView(generics.ListCreateAPIView):
     
     def get_queryset(self):
         user = self.request.user
-        # CORREGIDO: usar user_type correctamente
         if user.user_type == 'patient':
             return Appointment.objects.filter(patient=user)
         elif user.user_type == 'professional':
@@ -31,12 +33,12 @@ class AppointmentListView(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         user = self.request.user
-        # CORREGIDO: asignar paciente automáticamente si es paciente
+        # Asignar paciente automáticamente si es paciente
         if user.user_type == 'patient':
-            serializer.save(patient=user)
+            serializer.save(patient=user, status='scheduled')
         else:
             # Si es profesional, necesita que se especifique el paciente
-            serializer.save()
+            serializer.save(status='scheduled')
 
 class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = AppointmentSerializer
@@ -49,8 +51,6 @@ class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
         elif user.user_type == 'professional':
             return Appointment.objects.filter(professional=user)
         return Appointment.objects.none()
-
-# ==================== VISTAS ADICIONALES ====================
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -66,7 +66,6 @@ def available_slots_view(request):
         )
     
     try:
-        # Verificar que el profesional existe y es profesional
         from users.models import User
         professional = User.objects.get(
             id=professional_id, 
@@ -74,23 +73,20 @@ def available_slots_view(request):
             is_active=True
         )
         
-        # Convertir fecha
         date = datetime.strptime(date_str, '%Y-%m-%d').date()
         
-        # Obtener citas existentes para ese profesional en esa fecha
         existing_appointments = Appointment.objects.filter(
             professional=professional,
             appointment_date=date,
             status__in=['scheduled', 'confirmed']
         ).values_list('appointment_time', flat=True)
         
-        # Generar slots disponibles (9am a 5pm, cada 30 min)
         slots = []
         existing_times = [t.strftime('%H:%M:%S') for t in existing_appointments]
         
-        for hour in range(9, 18):  # 9am a 5pm
+        for hour in range(9, 18):
             for minute in [0, 30]:
-                if hour == 17 and minute == 30:  # Último slot a las 5:00
+                if hour == 17 and minute == 30:
                     continue
                 
                 time_str = f"{hour:02d}:{minute:02d}:00"
@@ -105,32 +101,8 @@ def available_slots_view(request):
             status=status.HTTP_404_NOT_FOUND
         )
     except Exception as e:
+        logger.error(f"Error en available_slots: {str(e)}")
         return Response(
-            {"error": str(e)},
+            {"error": "Error interno del servidor"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def upcoming_appointments_view(request):
-    """Obtener citas próximas del usuario"""
-    user = request.user
-    today = timezone.now().date()
-    
-    if user.user_type == 'patient':
-        appointments = Appointment.objects.filter(
-            patient=user,
-            appointment_date__gte=today,
-            status__in=['scheduled', 'confirmed']
-        ).order_by('appointment_date', 'appointment_time')[:10]
-    elif user.user_type == 'professional':
-        appointments = Appointment.objects.filter(
-            professional=user,
-            appointment_date__gte=today,
-            status__in=['scheduled', 'confirmed']
-        ).order_by('appointment_date', 'appointment_time')[:10]
-    else:
-        appointments = Appointment.objects.none()
-    
-    serializer = AppointmentSerializer(appointments, many=True)
-    return Response(serializer.data)
