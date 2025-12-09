@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-clave-temporal-para-desarrollo')
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'backend', 'frontend']
+ALLOWED_HOSTS = ['*']  # Para desarrollo, en producción especificar hosts
 
 # ==================== APPLICATION DEFINITION ====================
 
@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework',
     'rest_framework_simplejwt',
-    'corsheaders',
+    'corsheaders',  # ¡DEBE ESTAR INSTALADO!
     
     # Local apps
     'users',
@@ -35,7 +35,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # ¡DEBE IR JUSTO DESPUÉS DE SecurityMiddleware!
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -72,7 +72,7 @@ DATABASES = {
         'NAME': os.environ.get('DB_NAME', 'healthcare_db'),
         'USER': os.environ.get('DB_USER', 'healthcare_user'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'healthcare_password'),
-        'HOST': os.environ.get('DB_HOST', 'db'),  # ✅ 'db' es el nombre del servicio en docker-compose
+        'HOST': os.environ.get('DB_HOST', 'db'),
         'PORT': os.environ.get('DB_PORT', '5432'),
         'CONN_MAX_AGE': 600,
         'OPTIONS': {
@@ -166,17 +166,22 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# ==================== CORS CONFIGURATION ====================
-CORS_ALLOW_ALL_ORIGINS = True  # Permitir todos los orígenes en desarrollo
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
+# ==================== CORS CONFIGURATION DEFINITIVA ====================
+# ¡CONFIGURACIÓN QUE SÍ FUNCIONA!
+
+CORS_ALLOW_ALL_ORIGINS = True  # Permitir todos en desarrollo
+
+# O si quieres ser más específico:
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# Headers permitidos
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -189,7 +194,23 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Configuración de CSRF para desarrollo
+# Métodos permitidos
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Exponer headers
+CORS_EXPOSE_HEADERS = [
+    'Content-Type',
+    'X-CSRFToken',
+]
+
+# Configuración de CSRF
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
@@ -201,32 +222,14 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 
-# Middleware - USAR NUESTRO PROPIO
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    
-    # NUESTRO MIDDLEWARE MANUAL
-    'healthcare_system.cors_fix.CorsFixMiddleware',
-    
-    # O el permisivo:
-    # 'healthcare_system.cors_fix.DevelopmentCorsMiddleware',
-    
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
+# ==================== SECURITY PARA DESARROLLO ====================
 
-# ==================== SECURITY ====================
-
-# Solo para desarrollo
 if DEBUG:
-    # Desactivar algunas protecciones para facilitar desarrollo
+    # Desactivar protecciones para facilitar desarrollo
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
     SECURE_SSL_REDIRECT = False
     SECURE_BROWSER_XSS_FILTER = False
     SECURE_CONTENT_TYPE_NOSNIFF = False
     X_FRAME_OPTIONS = 'SAMEORIGIN'
+    CORS_ALLOW_ALL_ORIGINS = True  # Asegurar que esté True en desarrollo
