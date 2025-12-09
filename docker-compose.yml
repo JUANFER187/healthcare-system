@@ -1,121 +1,55 @@
+services:
 
-networks:
-  healthcare-network:
-    driver: bridge
+  # Base de Datos para el Servicio de Pacientes
+  patients_db:
+    image: postgres:15-alpine
+    container_name: patients_db
+    environment:
+      POSTGRES_USER: user_patients
+      POSTGRES_PASSWORD: password_patients
+      POSTGRES_DB: patients_db
+    ports:
+      - "5434:5432" # Solo para desarrollo/debugging
+
+  # Base de Datos para el Servicio de Autenticación
+  auth_db:
+    image: postgres:15-alpine
+    container_name: auth_db
+    environment:
+      POSTGRES_USER: user_auth
+      POSTGRES_PASSWORD: password_auth
+      POSTGRES_DB: auth_db
+    ports:
+      - "5433:5432" # Mapeado a un puerto diferente en el host
+
+  # Microservicio de Autenticación
+  auth-service:
+    build:
+      context: ./auth-service # Ruta de la carpeta donde está el Dockerfile
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8080:3000" # Puerto del host:Puerto del contenedor (EXPOSE 3000)
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://user_auth:password_auth@auth_db:5432/auth_db
+    depends_on:
+      - auth_db # Asegura que la base de datos inicie primero
+
+  # Microservicio de Pacientes
+  patients-service:
+    build:
+      context: ./patients-service # Ruta de la carpeta donde está el Dockerfile
+      dockerfile: Dockerfile
+    container_name: patients-service
+    ports:
+      - "8081:3001" # Mapeado a 8081 en el host para evitar conflicto con el Auth-Service (8080)
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://user_patients:password_patients@patients_db:5432/patients_db
+    depends_on:
+      - patients_db # Asegura que la base de datos de pacientes inicie primero
 
 volumes:
-  postgres_data:
-  n8n_data:
-
-services:
-  # ==================== BASE DE DATOS ====================
-  db:
-    image: postgres:13
-    container_name: healthcare-db
-    environment:
-      POSTGRES_DB: healthcare_db
-      POSTGRES_USER: healthcare_user
-      POSTGRES_PASSWORD: healthcare_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - healthcare-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U healthcare_user -d healthcare_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ==================== BACKEND DJANGO ====================
-  backend:
-    build: ./backend
-    container_name: healthcare-backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DEBUG=1
-      - DB_NAME=healthcare_db
-      - DB_USER=healthcare_user
-      - DB_PASSWORD=healthcare_password
-      - DB_HOST=db
-      - DB_PORT=5432
-      - SECRET_KEY=django-insecure-dev-key-change-in-production
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - ./backend:/app
-      - ./backend/requirements.txt:/app/requirements.txt
-    command: >
-      sh -c "sleep 5 &&
-             python manage.py migrate &&
-             echo 'Migraciones aplicadas' &&
-             python manage.py runserver 0.0.0.0:8000"
-    networks:
-      - healthcare-network
-
-  # ==================== FRONTEND REACT ====================
-  frontend:
-    build: ./frontend
-    container_name: healthcare-frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-      - VITE_API_URL=http://localhost:8000/api
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    depends_on:
-      - backend
-    networks:
-      - healthcare-network
-
-  # ==================== n8n PARA AUTOMATIZACIÓN ====================
-  n8n:
-    image: n8nio/n8n
-    container_name: healthcare-n8n
-    ports:
-      - "5678:5678"
-    environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=admin123
-      - N8N_HOST=localhost
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - WEBHOOK_URL=http://localhost:5678/
-    volumes:
-      - n8n_data:/home/node/.n8n
-    networks:
-      - healthcare-network
-
-  # ==================== n8n-mcp PARA IA ====================
-  n8n-mcp:
-    build: ./n8n-mcp
-    container_name: healthcare-n8n-mcp
-    ports:
-      - "3002:3002"
-    environment:
-      - N8N_URL=http://n8n:5678
-      - N8N_API_KEY=test-key
-    depends_on:
-      - n8n
-    networks:
-      - healthcare-network
-
-  # ==================== NGINX (OPCIONAL - COMENTADO) ====================
-  # nginx:
-  #   image: nginx:alpine
-  #   container_name: healthcare-nginx
-  #   ports:
-  #     - "8080:80"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf
-  #   depends_on:
-  #     - backend
-  #     - frontend
-  #   networks:
-  #     - healthcare-network
+  patients_data:
+  auth_data:
