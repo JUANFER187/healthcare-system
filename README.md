@@ -1,4 +1,4 @@
-🏥 Healthcare System
+### 🏥 Healthcare System
 - Este documento detalla el estado actual del proyecto, comparando la implementación con el producto final deseado especificado en el Manual Técnico.
 - Sistema integral de gestión de citas médicas** para pacientes y profesionales de la salud, desarrollado con Django, React y Docker.
 
