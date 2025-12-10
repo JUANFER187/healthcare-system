@@ -1,5 +1,5 @@
 🏥 Healthcare System
-
+Este documento detalla el estado actual del proyecto, comparando la implementación con el producto final deseado especificado en el Manual Técnico.
 Sistema integral de gestión de citas médicas** para pacientes y profesionales de la salud, desarrollado con Django, React y Docker.
 
 ![Healthcare System](https://img.shields.io/badge/Status-En%20Desarrollo-yellow)
@@ -47,6 +47,28 @@ healthcare-system/
 | **Frontend** | React 18, Vite, React Router DOM, Axios, Lucide React |
 | **DevOps** | Docker, Docker Compose, n8n (automatización), n8n-mcp |
 | **Estilo** | CSS-in-JS, Paleta de colores profesional (#313851, #C2CBD3, #F6F3ED) |
+
+### Deficiencia Crítica: Estado de Despliegue en Kubernetes (K8s)
+## 1. Resumen de Fallas Técnicas
+
+La inoperatividad del sistema se debe a fallas en la etapa de despliegue de los microservicios en Kubernetes, impidiendo que la aplicación alcance un estado funcional.
+![alt text](image.png)
+
+## Conclusión Técnica: 
+La falla inmediata (ImagePullBackOff) en la descarga de las imágenes Docker impide el inicio de los Init Containers. Esto significa que scripts críticos como wait_for_db.py, manage.py migrate y create_services.py nunca se ejecutan, dejando ambas bases de datos (auth-db y patients-db) vacías y los microservicios fuera de servicio.
+
+## 2. Fallos de Funcionamiento (Contraste con el Manual Técnico)
+
+El proyecto es deficiente en sus Funciones Principales y en la implementación de sus flujos de datos.
+![alt text](image-1.png)
+
+## 3. Conclusión de la Deficiencia del Proyecto
+
+El proyecto está estructuralmente diseñado para cumplir con los requisitos del Manual Técnico (microservicios separados, lógica de Init Containers, endpoints en api.js y componentes de React listos).
+
+Sin embargo, debido a las fallas de la integración y despliegue continuo (CI/CD), específicamente el problema de docker push (que provoca ImagePullBackOff en K8s), la aplicación se encuentra en un estado no funcional.
+
+La principal deficiencia es que la capa de Backend (Django Microservices) está completamente inactiva, lo que anula todas las Funciones Principales y los Flujos de Datos descritos en el manual, dejando el frontend con fallos de conexión o dependiendo de datos de prueba para simular la funcionalidad.
 
 ## 📦 Instalación y Configuración
 
