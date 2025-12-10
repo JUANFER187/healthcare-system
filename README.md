@@ -1,6 +1,6 @@
 🏥 Healthcare System
-Este documento detalla el estado actual del proyecto, comparando la implementación con el producto final deseado especificado en el Manual Técnico.
-Sistema integral de gestión de citas médicas** para pacientes y profesionales de la salud, desarrollado con Django, React y Docker.
+- Este documento detalla el estado actual del proyecto, comparando la implementación con el producto final deseado especificado en el Manual Técnico.
+- Sistema integral de gestión de citas médicas** para pacientes y profesionales de la salud, desarrollado con Django, React y Docker.
 
 ![Healthcare System](https://img.shields.io/badge/Status-En%20Desarrollo-yellow)
 ![Django](https://img.shields.io/badge/Django-4.2.7-green)
@@ -25,18 +25,18 @@ Sistema integral de gestión de citas médicas** para pacientes y profesionales 
 
 ## 🏗️ Arquitectura del Proyecto
 healthcare-system/
-├── backend/ # Django REST API
-│ ├── users/ # Autenticación y usuarios
-│ ├── appointments/ # Gestión de citas
-│ ├── clinic_history/ # Historial clínico
-│ └── healthcare_system/ # Configuración principal
-├── frontend/ # React Application
-│ ├── src/
-│ │ ├── components/ # Componentes reutilizables
-│ │ ├── pages/ # Vistas principales
-│ │ ├── services/ # Llamadas a API
-│ │ └── context/ # Estado global (Auth)
-└── docker/ # Configuración Docker
+- ├── backend/ # Django REST API
+- │ ├── users/ # Autenticación y usuarios
+- │ ├── appointments/ # Gestión de citas
+- │ ├── clinic_history/ # Historial clínico
+- │ └── healthcare_system/ # Configuración principal
+- ├── frontend/ # React Application
+- │ ├── src/
+- │ │ ├── components/ # Componentes reutilizables
+- │ │ ├── pages/ # Vistas principales
+- │ │ ├── services/ # Llamadas a API
+- │ │ └── context/ # Estado global (Auth)
+- └── docker/ # Configuración Docker
 
 
 ## 🛠️ Tecnologías Utilizadas
