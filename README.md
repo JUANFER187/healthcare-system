@@ -152,3 +152,7 @@ PostgreSQL	localhost	5432
 
 ## Nota:
 Requiere Docker y Docker Compose instalados.
+Proyecto realizado por equipo conformado
+Juan Fernande Prieto Gomez 219747719
+Diego Andres Hernandez Roddriguez 216028371
+
