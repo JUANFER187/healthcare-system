@@ -17,6 +17,9 @@ yarn-error.log*
 
 # Docker
 .dockerignore
+helm.exe
+kubectl.exe
+minikube.exe
 
 # Environment variables
 .env
