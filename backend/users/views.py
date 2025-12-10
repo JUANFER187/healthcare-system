@@ -209,8 +209,10 @@ def compatible_login_view(request):
                 'last_name': user.last_name,
                 'user_type': user.user_type
             },
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
+            # CAMBIO CRUCIAL AQUÍ: Usamos 'token' en lugar de 'access'
+            'token': str(refresh.access_token),  # <-- ¡USAR 'token' aquí!
+            'refresh': str(refresh),             # Mantener refresh si es necesario
+            'access': str(refresh.access_token), # Mantener 'access' por si acaso
         }
         
         logger.info(f"Login compatibilidad exitoso para: {user.email}")
