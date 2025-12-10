@@ -173,8 +173,8 @@ n8n	http://localhost:5678	5678
 PostgreSQL	localhost	5432
 
 ## Nota:
-Requiere Docker y Docker Compose instalados.
-Proyecto realizado por equipo conformado:
-Juan Fernando Prieto Gomez 219747719.
-Diego Andres Hernandez Roddriguez 216028371.
+- Requiere Docker y Docker Compose instalados.
+- Proyecto realizado por equipo conformado:
+- Juan Fernando Prieto Gomez 219747719.
+- Diego Andres Hernandez Roddriguez 216028371.
 
