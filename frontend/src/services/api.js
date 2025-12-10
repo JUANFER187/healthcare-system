@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://localhost'; // CORRECTO. Apunta al Ingress via minikube tunnel.
 
 // Crear instancia SIMPLE sin configuraciones complicadas
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000,
+  baseURL: API_BASE_URL,
+  timeout: 15000,
 });
 
 // Solo agregar token si existe
@@ -53,8 +53,9 @@ api.interceptors.response.use(
 export const authService = {
   login: async (username, password) => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/auth/login/`,
+      // CAMBIO CRÍTICO: Usar la instancia 'api' para aprovechar la baseURL
+      const response = await api.post( 
+        '/auth/login', // Solo el path restante
         { username, password },
         { 
           headers: { 'Content-Type': 'application/json' },

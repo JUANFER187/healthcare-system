@@ -17,12 +17,20 @@ spec:
     spec:
       containers:
       - name: auth-service
-        image: juanferpg/auth-service:latest # Usa la imagen de Docker Hub
+        image: juanferpg/auth-service:latest
         ports:
-        - containerPort: 3000
-        env: # Variables de entorno para la conexión a la DB
-        - name: DATABASE_URL
-          value: "postgres://user_auth:password_auth@auth-db-service:5432/auth_db" # Usamos el nombre del Service de la DB
+        - containerPort: 8000 # <-- ¡CORREGIDO!
+        env:
+        - name: DB_HOST
+          value: "auth-db-service"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "auth_db"
+        - name: DB_USER
+          value: "user_auth"
+        - name: DB_PASSWORD
+          value: "password_auth"
         - name: JWT_SECRET
           value: "mi_super_secreto_seguro_y_largo_debe_estar_en_env"
 ---
@@ -37,4 +45,4 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 3000
+      targetPort: 8000 # <-- ¡CORREGIDO! Apuntando al puerto WSGI de Django
