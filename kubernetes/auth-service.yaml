@@ -1,0 +1,40 @@
+# 1. Deployment:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-deployment
+  labels:
+    app: auth
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+      - name: auth-service
+        image: juanferpg/auth-service:latest # Usa la imagen de Docker Hub
+        ports:
+        - containerPort: 3000
+        env: # Variables de entorno para la conexión a la DB
+        - name: DATABASE_URL
+          value: "postgres://user_auth:password_auth@auth-db-service:5432/auth_db" # Usamos el nombre del Service de la DB
+        - name: JWT_SECRET
+          value: "mi_super_secreto_seguro_y_largo_debe_estar_en_env"
+---
+# 2. Service:
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service-internal
+spec:
+  selector:
+    app: auth
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000

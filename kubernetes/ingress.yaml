@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: healthcare-ingress
+  annotations:
+    # 1. CLAVE: Habilita el modo de Expresión Regular para las rutas.
+    nginx.ingress.kubernetes.io/use-regex: "true" 
+    
+    # 2. Reescritura: Toma el grupo de captura $2 (lo que viene después de /auth o /patients)
+    # y lo envía al servicio interno.
+    nginx.ingress.kubernetes.io/rewrite-target: /$2 
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /auth(/|$)(.*) # El path usa Regex para capturar el resto de la URL
+        pathType: ImplementationSpecific # <--- USAR ESTE TIPO PARA REGEX
+        backend:
+          service:
+            name: auth-service-internal
+            port:
+              number: 80
+      - path: /patients(/|$)(.*) # Path con Regex
+        pathType: ImplementationSpecific # <--- USAR ESTE TIPO PARA REGEX
+        backend:
+          service:
+            name: patients-service-internal
+            port:
+              number: 80

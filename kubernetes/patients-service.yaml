@@ -1,0 +1,41 @@
+# 1. Deployment: Define los Pods y el número de réplicas
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patients-deployment
+  labels:
+    app: patients
+spec:
+  replicas: 2 # Queremos 2 instancias corriendo para resiliencia
+  selector:
+    matchLabels:
+      app: patients
+  template:
+    metadata:
+      labels:
+        app: patients
+    spec:
+      containers:
+      - name: patients-service
+        image: juanferpg/patients-service:latest # Usa la imagen de Docker Hub
+        ports:
+        - containerPort: 3001
+        env: # Variables de entorno para la conexión a la DB
+        - name: DATABASE_URL
+          value: "postgres://user_patients:password_patients@patients-db-service:5432/patients_db" # Usamos el nombre del Service de la DB
+        - name: JWT_SECRET
+          value: "mi_super_secreto_seguro_y_largo_debe_estar_en_env" # Ojo con el secreto
+
+---
+# 2. Service: Expone el Deployment dentro del clúster
+apiVersion: v1
+kind: Service
+metadata:
+  name: patients-service-internal
+spec:
+  selector:
+    app: patients
+  ports:
+    - protocol: TCP
+      port: 80 # Puerto que usa el Service
+      targetPort: 3001 # Puerto interno del contenedor (EXPOSE)

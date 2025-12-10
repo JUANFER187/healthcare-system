@@ -29,10 +29,10 @@ app.get('/health', (req, res) => {
 });
 
 // 3. Aplicar el middleware a la ruta protegida
-app.get('/patients', authenticateToken, (req, res) => {
-    // Solo se llega aquí si el token es válido
-    console.log(`Usuario autenticado: ${req.user.username}`);
-    res.json([{ id: 1, name: 'Juan Pérez' }]);
+// Ahora (Escuchando en la ruta raíz, que es lo que el Ingress le envía):
+app.get('/', authenticateToken, (req, res) => {
+    // La lista de pacientes que esperamos
+    res.json([{id: 1, name: "Juan Pérez"}]);
 });
 
 app.listen(PORT, () => {
